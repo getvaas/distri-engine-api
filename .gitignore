@@ -1,0 +1,9 @@
+build
+.gradle
+.idea
+.env
+.terraform
+.terraform*
+.sdd/
+.DS_Store
+gradle

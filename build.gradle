@@ -1,0 +1,75 @@
+plugins {
+	id 'java'
+	id 'jacoco'
+	id 'org.springframework.boot' version '4.0.5'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.getvaas.distribution'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		name = 'GitHubPackagesSpringSecurity'
+		url = 'https://maven.pkg.github.com/getvaas/vaas-security-lib-spring-boot-core'
+		credentials {
+			username = System.getenv('USERNAME_TOKEN') ?: project.findProperty('usernameToken')?.toString()
+			password = System.getenv('PASSWORD_TOKEN') ?: project.findProperty('passwordToken')?.toString()
+		}
+	}
+}
+
+dependencies {
+	implementation platform('software.amazon.awssdk:bom:2.26.0')
+	implementation 'software.amazon.awssdk:sns'
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+	implementation 'ca.pjer:logback-awslogs-appender:1.6.0'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-json'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'com.getvaas:security:v1.0.4'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'net.javacrumbs.shedlock:shedlock-spring:6.2.0'
+	implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:6.2.0'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+	implementation 'org.springframework.boot:spring-boot-h2console'
+	compileOnly 'org.projectlombok:lombok'
+	implementation 'org.mapstruct:mapstruct:1.6.3'
+	implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
+	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+	testAnnotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+	}
+}

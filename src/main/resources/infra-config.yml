@@ -1,0 +1,75 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/distribution-engine
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+  endpoint:
+    health:
+      enabled: true
+  health:
+    redis:
+      enabled: false
+
+spring:
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc.time_zone: UTC
+        show_sql: false
+        format_sql: true
+  datasource:
+    payments-db:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: ${DATASOURCE___PAYMENTS_DB___URL:jdbc:mysql://dev.db.app.getvaas.com/payments_db?useUnicode=yes&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+      username: ${DATASOURCE___PAYMENTS_DB___USERNAME:SECRET}
+      password: ${DATASOURCE___PAYMENTS_DB___PASSWORD:SECRET}
+  data:
+    redis:
+      host: ${REDIS___HOST:dev.smr.app.getvaas.com}
+      port: ${REDIS___PORT:6379}
+      ssl:
+        enabled: ${REDIS___SSL___ENABLED:false}
+        disable-peer-verification: ${REDIS___SSL___DISABLE_PEER_VERIFICATION:false}
+
+company-api:
+  base-url: ${BASE_URL:http://localhost:8080/api}/company
+  x-only-for-vaas-token: ${vaas_header:YWd1YW50ZXJpdmVycGxhdGVjYXJham8hISE=}
+
+auth0:
+  url: ${url:https://dev-nfj45tsl.us.auth0.com}
+  client-id: ${client_id:}
+  client-secret: ${client_secret:}
+
+vaas:
+  security:
+    enabled: ${VAAS_SECURITY_ENABLED:false}
+    jwk:
+      domain: ${url}
+      endpoint:
+        user-info: "/userinfo"
+        claim:
+          m2m: "https://getvaas.com/m2m"
+          company-id: "https://getvaas.com/cpy"
+          role: "https://getvaas.com/role"
+          permissions: "https://getvaas.com/scp"
+
+cloud:
+  aws:
+    region: ${AWS_REGION:us-east-1}
+    endpoint: ${AWS_ENDPOINT:}
+    access-key-id: ${AWS_ACCESS_KEY:}
+    secret-access-key-id: ${AWS_SECRET_ACCESS_KEY:}
+
+distribution:
+  events:
+    sns-topic-arn: ${SNS_TOPIC_ARN:}
+
+infra:
+  security:
+    internal-service-header: ${vaas_header}

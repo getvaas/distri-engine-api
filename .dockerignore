@@ -1,0 +1,13 @@
+.git/
+.gitignore
+.idea/
+.gradle/
+.claude/
+build/
+docs/
+specs/
+scripts/
+deploy/
+*.md
+example.env
+.sdd.json

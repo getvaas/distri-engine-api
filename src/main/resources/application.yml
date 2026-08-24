@@ -1,0 +1,6 @@
+spring:
+  config:
+    import:
+      - classpath:infra-config.yml
+  application:
+    name: distribution-engine

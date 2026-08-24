@@ -1,0 +1,14 @@
+FROM gradle:8.14-jdk21
+
+ARG USERNAME_TOKEN
+ARG PASSWORD_TOKEN
+
+WORKDIR /home/app
+
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+COPY src ./src
+
+RUN gradle dependencies --no-daemon
+
+ENTRYPOINT ["gradle", "--no-daemon"]

@@ -1,0 +1,75 @@
+<configuration>
+    <springProperty scope="context" name="LOG_PROFILE" source="spring.profiles.active"/>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%highlight([time:%d{yyyy-MM-dd HH:mm:ss}]) - %highlight([lvl:%-5level]) - %highlight([msg:%msg]) - %highlight([mod:%logger{36}]) - %highlight([thread:%thread]) - [context:{%mdc}]%n%highlight(%xEx){faint}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="AWS_LOGS_CLOUD" class="ca.pjer.logback.AwsLogsAppender">
+        <layout class="net.logstash.logback.layout.LogstashLayout"/>
+        <logGroupName>/ecs/${LOG_PROFILE}/distribution-engine</logGroupName>
+        <logStreamName>log</logStreamName>
+        <maxBatchLogEvents>200</maxBatchLogEvents>
+        <maxFlushTimeMillis>30000</maxFlushTimeMillis>
+        <maxBlockTimeMillis>5000</maxBlockTimeMillis>
+        <retentionTimeDays>30</retentionTimeDays>
+    </appender>
+
+    <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>distribution-engine.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>distribution-engine-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <pattern>
+                    <pattern>
+                        {
+                        "level": "%level",
+                        "message": "%message",
+                        "thread": "%thread",
+                        "logger": "%logger"
+                        }
+                    </pattern>
+                </pattern>
+                <mdc/>
+                <arguments/>
+                <logstashMarkers/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <springProfile name="dev, stg, prod">
+        <root level="INFO">
+            <appender-ref ref="AWS_LOGS_CLOUD"/>
+            <appender-ref ref="ROLLING"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="test, local, default">
+        <root level="INFO">
+            <appender-ref ref="stdout"/>
+        </root>
+
+        <logger name="org.springframework.jdbc.datasource" level="INFO">
+            <appender-ref ref="stdout"/>
+        </logger>
+        <logger name="com.zaxxer.hikari" level="INFO">
+            <appender-ref ref="stdout"/>
+        </logger>
+        <logger name="org.hibernate.SQL" level="INFO">
+            <appender-ref ref="stdout"/>
+        </logger>
+    </springProfile>
+
+</configuration>
