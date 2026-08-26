@@ -3,6 +3,7 @@ package com.getvaas.distribution.engine.infrastructure.web.dto;
 import com.getvaas.distribution.engine.domain.model.PaymentFiltersConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
+import com.getvaas.distribution.engine.domain.model.NotificationsConfig;
 import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
 import com.getvaas.distribution.engine.domain.model.PoolConfig;
 import com.getvaas.distribution.engine.domain.model.ReadinessChecksConfig;
@@ -23,6 +24,7 @@ public record DistributionConfigResponse(
         DistributionRulesConfig rules,
         OwnershipConfig ownership,
         ReadinessChecksConfig readinessChecks,
+        NotificationsConfig notifications,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -40,6 +42,7 @@ public record DistributionConfigResponse(
                 domain.config() != null ? domain.config().rules() : null,
                 domain.config() != null ? domain.config().ownership() : null,
                 domain.config() != null ? domain.config().readinessChecks() : null,
+                domain.config() != null ? domain.config().notifications() : null,
                 domain.createdAt(),
                 domain.updatedAt()
         );

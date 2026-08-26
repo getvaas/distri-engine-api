@@ -19,5 +19,5 @@ public record DistributionConfigPayload(
         DistributionRulesConfig rules,    // VPR-9643 tipado (owner por componente); deductions/multi-moneda/remanente/impuestos quedan pendientes
         OwnershipConfig ownership,        // VPR-9635 (source) / VPR-9636 (cross validation) tipados
         ReadinessChecksConfig readinessChecks, // VPR-9661 tipado (solo BUSINESS_DAY tiene check real)
-        JsonNode notifications            // VPR-9639 / VPR-9640
+        NotificationsConfig notifications  // VPR-9639 (channels/events) / VPR-9640 (templates) tipados; body queda bloqueado, sin modelar
 ) {}
