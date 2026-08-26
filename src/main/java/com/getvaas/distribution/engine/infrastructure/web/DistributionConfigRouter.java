@@ -20,6 +20,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipReq
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFiltersRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateReadinessChecksConfigRequest;
+import com.getvaas.security.annotation.VaasSecurity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -36,7 +37,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 
-// TODO: reactivar @VaasSecurity en cada endpoint una vez que terminemos de probar el wizard sin auth.
 @RestController
 @RequestMapping("/configs")
 @RequiredArgsConstructor
@@ -54,11 +54,13 @@ public class DistributionConfigRouter {
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
     private final RunReadinessChecksUseCase runReadinessChecksUseCase;
 
+    @VaasSecurity
     @GetMapping("/active")
     public DistributionConfigResponse getActive(@RequestParam Long companyId) {
         return DistributionConfigResponse.from(resolveActiveDistributionConfigUseCase.execute(companyId));
     }
 
+    @VaasSecurity
     @GetMapping("/readiness")
     public ReadinessCheckOutcomeResponse getReadiness(
             @RequestParam Long companyId,
@@ -66,51 +68,60 @@ public class DistributionConfigRouter {
         return ReadinessCheckOutcomeResponse.from(runReadinessChecksUseCase.execute(companyId, date));
     }
 
+    @VaasSecurity
     @GetMapping("/{id}")
     public DistributionConfigResponse getById(@PathVariable String id) {
         return DistributionConfigResponse.from(getDistributionConfigUseCase.execute(id));
     }
 
+    @VaasSecurity
     @PostMapping
     public ResponseEntity<DistributionConfigResponse> create(@Valid @RequestBody CreateDistributionConfigRequest request) {
         var config = createDistributionConfigUseCase.execute(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(DistributionConfigResponse.from(config));
     }
 
+    @VaasSecurity
     @PutMapping("/{id}")
     public DistributionConfigResponse update(@PathVariable String id, @Valid @RequestBody UpdateDistributionConfigRequest request) {
         return DistributionConfigResponse.from(updateDistributionConfigUseCase.execute(id, request));
     }
 
+    @VaasSecurity
     @PutMapping("/{id}/pool")
     public DistributionConfigResponse updatePool(@PathVariable String id, @Valid @RequestBody UpdatePoolConfigRequest request) {
         return DistributionConfigResponse.from(updatePoolConfigUseCase.execute(id, request));
     }
 
+    @VaasSecurity
     @PutMapping("/{id}/payment-filters")
     public DistributionConfigResponse updatePaymentFilters(
             @PathVariable String id, @Valid @RequestBody UpdatePaymentFiltersRequest request) {
         return DistributionConfigResponse.from(updatePaymentFiltersUseCase.execute(id, request));
     }
 
+    @VaasSecurity
     @PutMapping("/{id}/distribution-rules")
     public DistributionConfigResponse updateDistributionRules(
             @PathVariable String id, @Valid @RequestBody UpdateDistributionRulesRequest request) {
         return DistributionConfigResponse.from(updateDistributionRulesUseCase.execute(id, request));
     }
 
+    @VaasSecurity
     @PutMapping("/{id}/ownership")
     public DistributionConfigResponse updateOwnership(
             @PathVariable String id, @Valid @RequestBody UpdateOwnershipRequest request) {
         return DistributionConfigResponse.from(updateOwnershipUseCase.execute(id, request));
     }
 
+    @VaasSecurity
     @PutMapping("/{id}/readiness-checks")
     public DistributionConfigResponse updateReadinessChecks(
             @PathVariable String id, @Valid @RequestBody UpdateReadinessChecksConfigRequest request) {
         return DistributionConfigResponse.from(updateReadinessChecksConfigUseCase.execute(id, request));
     }
 
+    @VaasSecurity
     @PostMapping("/{id}/activate")
     public DistributionConfigResponse activate(@PathVariable String id) {
         return DistributionConfigResponse.from(activateDistributionConfigUseCase.execute(id));
