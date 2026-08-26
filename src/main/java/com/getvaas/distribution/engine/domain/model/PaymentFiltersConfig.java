@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * están tipados — la etapa queda completa.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record DistributablePaymentsConfig(
+public record PaymentFiltersConfig(
         AccountingPaymentsConfig accountingPayments,
         GatewayFiltersConfig gatewayFilters,
         ConciliationRequirementsConfig conciliationRequirements,

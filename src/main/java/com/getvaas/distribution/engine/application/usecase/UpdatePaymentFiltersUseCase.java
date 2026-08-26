@@ -6,7 +6,7 @@ import com.getvaas.distribution.engine.domain.model.ConciliationRequirementRule;
 import com.getvaas.distribution.engine.domain.model.ConciliationRequirementsConfig;
 import com.getvaas.distribution.engine.domain.model.DateTimeFilterRule;
 import com.getvaas.distribution.engine.domain.model.DateTimeFiltersConfig;
-import com.getvaas.distribution.engine.domain.model.DistributablePaymentsConfig;
+import com.getvaas.distribution.engine.domain.model.PaymentFiltersConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.GatewayFiltersConfig;
@@ -39,7 +39,7 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
-public class UpdateDistributablePaymentsUseCase {
+public class UpdatePaymentFiltersUseCase {
 
     private final DistributionConfigJPARepository repository;
     private final DistributionConfigMapper mapper;
@@ -53,14 +53,14 @@ public class UpdateDistributablePaymentsUseCase {
         var gatewayFilters = buildGatewayFiltersConfig(request.gatewayFilters());
         var conciliationRequirements = buildConciliationRequirementsConfig(request.conciliationRequirements());
         var dateTimeFilters = buildDateTimeFiltersConfig(request.dateTimeFilters());
-        var distributablePayments = new DistributablePaymentsConfig(
+        var paymentFilters = new PaymentFiltersConfig(
                 accountingPayments, gatewayFilters, conciliationRequirements, dateTimeFilters);
 
         var updatedPayload = new DistributionConfigPayload(
                 existing.config().country(),
                 existing.config().currency(),
                 existing.config().pool(),
-                distributablePayments,
+                paymentFilters,
                 existing.config().virtualColumns(),
                 existing.config().rules(),
                 existing.config().ownership(),

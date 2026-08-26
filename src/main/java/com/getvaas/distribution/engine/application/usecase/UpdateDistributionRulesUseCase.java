@@ -38,7 +38,7 @@ public class UpdateDistributionRulesUseCase {
                 existing.config().country(),
                 existing.config().currency(),
                 existing.config().pool(),
-                existing.config().distributablePayments(),
+                existing.config().paymentFilters(),
                 existing.config().virtualColumns(),
                 rules,
                 existing.config().ownership(),

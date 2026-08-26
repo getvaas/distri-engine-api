@@ -5,9 +5,10 @@ import com.getvaas.distribution.engine.application.usecase.CreateDistributionCon
 import com.getvaas.distribution.engine.application.usecase.GetDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.ResolveActiveDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.RunReadinessChecksUseCase;
-import com.getvaas.distribution.engine.application.usecase.UpdateDistributablePaymentsUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdatePaymentFiltersUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionRulesUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdateOwnershipUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdatePoolConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateReadinessChecksConfigUseCase;
 import com.getvaas.distribution.engine.infrastructure.web.dto.CreateDistributionConfigRequest;
@@ -15,6 +16,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfig
 import com.getvaas.distribution.engine.infrastructure.web.dto.ReadinessCheckOutcomeResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFiltersRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateReadinessChecksConfigRequest;
@@ -44,8 +46,9 @@ public class DistributionConfigRouter {
     private final GetDistributionConfigUseCase getDistributionConfigUseCase;
     private final UpdateDistributionConfigUseCase updateDistributionConfigUseCase;
     private final UpdatePoolConfigUseCase updatePoolConfigUseCase;
-    private final UpdateDistributablePaymentsUseCase updateDistributablePaymentsUseCase;
+    private final UpdatePaymentFiltersUseCase updatePaymentFiltersUseCase;
     private final UpdateDistributionRulesUseCase updateDistributionRulesUseCase;
+    private final UpdateOwnershipUseCase updateOwnershipUseCase;
     private final ActivateDistributionConfigUseCase activateDistributionConfigUseCase;
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
@@ -87,13 +90,19 @@ public class DistributionConfigRouter {
     @PutMapping("/{id}/payment-filters")
     public DistributionConfigResponse updatePaymentFilters(
             @PathVariable String id, @Valid @RequestBody UpdatePaymentFiltersRequest request) {
-        return DistributionConfigResponse.from(updateDistributablePaymentsUseCase.execute(id, request));
+        return DistributionConfigResponse.from(updatePaymentFiltersUseCase.execute(id, request));
     }
 
     @PutMapping("/{id}/distribution-rules")
     public DistributionConfigResponse updateDistributionRules(
             @PathVariable String id, @Valid @RequestBody UpdateDistributionRulesRequest request) {
         return DistributionConfigResponse.from(updateDistributionRulesUseCase.execute(id, request));
+    }
+
+    @PutMapping("/{id}/ownership")
+    public DistributionConfigResponse updateOwnership(
+            @PathVariable String id, @Valid @RequestBody UpdateOwnershipRequest request) {
+        return DistributionConfigResponse.from(updateOwnershipUseCase.execute(id, request));
     }
 
     @PutMapping("/{id}/readiness-checks")

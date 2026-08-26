@@ -60,7 +60,7 @@ public class UpdatePoolConfigUseCase {
                 existing.config().country(),
                 existing.config().currency(),
                 poolConfig,
-                existing.config().distributablePayments(),
+                existing.config().paymentFilters(),
                 existing.config().virtualColumns(),
                 existing.config().rules(),
                 existing.config().ownership(),
