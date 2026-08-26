@@ -8,6 +8,7 @@ import com.getvaas.distribution.engine.application.usecase.RunReadinessChecksUse
 import com.getvaas.distribution.engine.application.usecase.UpdatePaymentFiltersUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionRulesUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdateNotificationsUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateOwnershipUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdatePoolConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateReadinessChecksConfigUseCase;
@@ -16,6 +17,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfig
 import com.getvaas.distribution.engine.infrastructure.web.dto.ReadinessCheckOutcomeResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateNotificationsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFiltersRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
@@ -53,6 +55,7 @@ public class DistributionConfigRouter {
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
     private final RunReadinessChecksUseCase runReadinessChecksUseCase;
+    private final UpdateNotificationsUseCase updateNotificationsUseCase;
 
     @GetMapping("/active")
     public DistributionConfigResponse getActive(@RequestParam Long companyId) {
@@ -109,6 +112,12 @@ public class DistributionConfigRouter {
     public DistributionConfigResponse updateReadinessChecks(
             @PathVariable String id, @Valid @RequestBody UpdateReadinessChecksConfigRequest request) {
         return DistributionConfigResponse.from(updateReadinessChecksConfigUseCase.execute(id, request));
+    }
+
+    @PutMapping("/{id}/notifications")
+    public DistributionConfigResponse updateNotifications(
+            @PathVariable String id, @Valid @RequestBody UpdateNotificationsRequest request) {
+        return DistributionConfigResponse.from(updateNotificationsUseCase.execute(id, request));
     }
 
     @PostMapping("/{id}/activate")
