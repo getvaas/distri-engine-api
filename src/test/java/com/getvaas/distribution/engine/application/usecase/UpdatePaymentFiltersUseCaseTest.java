@@ -1,6 +1,6 @@
 package com.getvaas.distribution.engine.application.usecase;
 
-import com.getvaas.distribution.engine.domain.model.DistributablePaymentsConfig;
+import com.getvaas.distribution.engine.domain.model.PaymentFiltersConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.enums.ConciliationTable;
@@ -37,14 +37,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UpdateDistributablePaymentsUseCaseTest {
+class UpdatePaymentFiltersUseCaseTest {
 
     @Mock
     private DistributionConfigJPARepository repository;
     @Mock
     private DistributionConfigMapper mapper;
     @InjectMocks
-    private UpdateDistributablePaymentsUseCase useCase;
+    private UpdatePaymentFiltersUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
             new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
@@ -68,10 +68,10 @@ class UpdateDistributablePaymentsUseCaseTest {
         return new PaymentFilterConditionGroupRequest(List.of(conditions));
     }
 
-    private DistributablePaymentsConfig captureSavedDistributablePayments() {
+    private PaymentFiltersConfig captureSavedPaymentFilters() {
         var captor = ArgumentCaptor.forClass(DistributionConfigPayload.class);
         verify(mapper).serializeConfig(captor.capture());
-        return captor.getValue().distributablePayments();
+        return captor.getValue().paymentFilters();
     }
 
     // ===== Accounting Payments (VPR-9631) =====
@@ -86,7 +86,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.accountingPayments().hasAccountingPayments()).isTrue();
         assertThat(saved.accountingPayments().distributeAccountingPayments()).isFalse();
         assertThat(saved.accountingPayments().conditionGroups()).hasSize(1);
@@ -136,7 +136,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.accountingPayments().conditionGroups().get(0).conditions().get(0).value()).isNull();
     }
 
@@ -160,7 +160,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.accountingPayments().hasAccountingPayments()).isFalse();
         assertThat(saved.accountingPayments().distributeAccountingPayments()).isTrue();
         assertThat(saved.accountingPayments().conditionGroups()).isEmpty();
@@ -190,7 +190,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.gatewayFilters().mode()).isEqualTo(GatewayFilterMode.INCLUDE_ONLY);
         assertThat(saved.gatewayFilters().gateways()).containsExactly("PayU", "WOMPI");
     }
@@ -203,7 +203,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.gatewayFilters().mode()).isEqualTo(GatewayFilterMode.EXCLUDE);
         assertThat(saved.gatewayFilters().gateways()).containsExactly("EFECTY");
     }
@@ -216,7 +216,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.gatewayFilters().mode()).isEqualTo(GatewayFilterMode.ALL);
         assertThat(saved.gatewayFilters().gateways()).isEmpty();
     }
@@ -238,7 +238,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.gatewayFilters().mode()).isEqualTo(GatewayFilterMode.ALL);
         assertThat(saved.gatewayFilters().gateways()).isEmpty();
     }
@@ -254,7 +254,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.conciliationRequirements().groups()).hasSize(1);
         var rule = saved.conciliationRequirements().groups().get(0).rules().get(0);
         assertThat(rule.tableA()).isEqualTo(ConciliationTable.PAYMENT_TAPE);
@@ -271,7 +271,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.conciliationRequirements().groups().get(0).rules().get(0).gateway()).isNull();
     }
 
@@ -303,7 +303,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.conciliationRequirements().groups()).isEmpty();
     }
 
@@ -318,7 +318,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         var savedRule = saved.dateTimeFilters().rules().get(0);
         assertThat(savedRule.gateway()).isNull();
         assertThat(savedRule.ruleType()).isEqualTo(DateTimeFilterRuleType.DISTRIBUTE_BY_DATE);
@@ -335,7 +335,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         var savedRule = saved.dateTimeFilters().rules().get(0);
         assertThat(savedRule.gateway()).isEqualTo("EFECTY");
         assertThat(savedRule.ruleType()).isEqualTo(DateTimeFilterRuleType.DAYS_BACK_LIMIT);
@@ -391,7 +391,7 @@ class UpdateDistributablePaymentsUseCaseTest {
 
         useCase.execute("id-1", request);
 
-        var saved = captureSavedDistributablePayments();
+        var saved = captureSavedPaymentFilters();
         assertThat(saved.dateTimeFilters().rules()).isEmpty();
     }
 }

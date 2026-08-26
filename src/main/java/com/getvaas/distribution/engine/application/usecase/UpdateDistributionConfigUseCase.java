@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * Actualiza únicamente los campos de Deal Info (VPR-9644). Las demás secciones del config_json
- * (pool, distributablePayments, virtualColumns, rules, ownership, readinessChecks, notifications)
+ * (pool, paymentFilters, virtualColumns, rules, ownership, readinessChecks, notifications)
  * se preservan tal cual estaban — todavía no tienen ticket propio de edición.
  */
 @Component
@@ -38,7 +38,7 @@ public class UpdateDistributionConfigUseCase {
                 request.country() != null ? request.country() : existing.config().country(),
                 request.currency() != null ? request.currency() : existing.config().currency(),
                 existing.config().pool(),
-                existing.config().distributablePayments(),
+                existing.config().paymentFilters(),
                 existing.config().virtualColumns(),
                 existing.config().rules(),
                 existing.config().ownership(),
