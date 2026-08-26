@@ -8,6 +8,7 @@ import com.getvaas.distribution.engine.application.usecase.RunReadinessChecksUse
 import com.getvaas.distribution.engine.application.usecase.UpdatePaymentFiltersUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionRulesUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdateOwnershipUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdatePoolConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateReadinessChecksConfigUseCase;
 import com.getvaas.distribution.engine.infrastructure.web.dto.CreateDistributionConfigRequest;
@@ -15,6 +16,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfig
 import com.getvaas.distribution.engine.infrastructure.web.dto.ReadinessCheckOutcomeResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFiltersRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateReadinessChecksConfigRequest;
@@ -46,6 +48,7 @@ public class DistributionConfigRouter {
     private final UpdatePoolConfigUseCase updatePoolConfigUseCase;
     private final UpdatePaymentFiltersUseCase updatePaymentFiltersUseCase;
     private final UpdateDistributionRulesUseCase updateDistributionRulesUseCase;
+    private final UpdateOwnershipUseCase updateOwnershipUseCase;
     private final ActivateDistributionConfigUseCase activateDistributionConfigUseCase;
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
@@ -94,6 +97,12 @@ public class DistributionConfigRouter {
     public DistributionConfigResponse updateDistributionRules(
             @PathVariable String id, @Valid @RequestBody UpdateDistributionRulesRequest request) {
         return DistributionConfigResponse.from(updateDistributionRulesUseCase.execute(id, request));
+    }
+
+    @PutMapping("/{id}/ownership")
+    public DistributionConfigResponse updateOwnership(
+            @PathVariable String id, @Valid @RequestBody UpdateOwnershipRequest request) {
+        return DistributionConfigResponse.from(updateOwnershipUseCase.execute(id, request));
     }
 
     @PutMapping("/{id}/readiness-checks")

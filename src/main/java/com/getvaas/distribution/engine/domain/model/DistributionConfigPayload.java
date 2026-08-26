@@ -17,7 +17,7 @@ public record DistributionConfigPayload(
         PaymentFiltersConfig paymentFilters,      // VPR-9631 tipado; VPR-9632/9633/9634 siguen como JsonNode dentro de PaymentFiltersConfig
         JsonNode virtualColumns,          // sin definir todavía
         DistributionRulesConfig rules,    // VPR-9643 tipado (owner por componente); deductions/multi-moneda/remanente/impuestos quedan pendientes
-        JsonNode ownership,               // VPR-9635 / VPR-9636
+        OwnershipConfig ownership,        // VPR-9635 (source) / VPR-9636 (cross validation) tipados
         ReadinessChecksConfig readinessChecks, // VPR-9661 tipado (solo BUSINESS_DAY tiene check real)
         JsonNode notifications            // VPR-9639 / VPR-9640
 ) {}
