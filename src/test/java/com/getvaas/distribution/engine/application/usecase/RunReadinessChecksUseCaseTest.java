@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
+import com.getvaas.distribution.engine.domain.model.ReadinessCheckSetting;
 import com.getvaas.distribution.engine.domain.model.ReadinessChecksConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckFailureAction;
@@ -45,13 +46,15 @@ class RunReadinessChecksUseCaseTest {
                 DistributionConfigStatus.ACTIVE, payload, LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
 
+    private ReadinessChecksConfig configWith(ReadinessCheckType type) {
+        return new ReadinessChecksConfig(List.of(
+                new ReadinessCheckSetting(type, ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE)));
+    }
+
     @Test
     void execute_businessDayEnabledAndWeekday_isReadyToDistribute() {
-        var readiness = new ReadinessChecksConfig(
-                List.of(ReadinessCheckType.BUSINESS_DAY),
-                ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE);
-
-        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(readiness));
+        when(resolveActiveDistributionConfigUseCase.execute(3L))
+                .thenReturn(activeConfigWith(configWith(ReadinessCheckType.BUSINESS_DAY)));
 
         var outcome = useCase.execute(3L, LocalDate.of(2026, 8, 24)); // lunes
 
@@ -60,11 +63,8 @@ class RunReadinessChecksUseCaseTest {
 
     @Test
     void execute_businessDayEnabledAndWeekend_isNotReadyToDistribute() {
-        var readiness = new ReadinessChecksConfig(
-                List.of(ReadinessCheckType.BUSINESS_DAY),
-                ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE);
-
-        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(readiness));
+        when(resolveActiveDistributionConfigUseCase.execute(3L))
+                .thenReturn(activeConfigWith(configWith(ReadinessCheckType.BUSINESS_DAY)));
 
         var outcome = useCase.execute(3L, LocalDate.of(2026, 8, 22)); // sábado
 
@@ -74,11 +74,8 @@ class RunReadinessChecksUseCaseTest {
     @Test
     void execute_unimplementedCheckEnabled_isStillReadyToDistribute() {
         // NOT_IMPLEMENTED no bloquea — no hay capacidad todavía para evaluarlo, distinto de un FAILED real.
-        var readiness = new ReadinessChecksConfig(
-                List.of(ReadinessCheckType.PAYMENT_TAPE_LOADED),
-                ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE);
-
-        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(readiness));
+        when(resolveActiveDistributionConfigUseCase.execute(3L))
+                .thenReturn(activeConfigWith(configWith(ReadinessCheckType.PAYMENT_TAPE_LOADED)));
 
         var outcome = useCase.execute(3L, LocalDate.of(2026, 8, 24));
 

@@ -30,3 +30,10 @@ El motor de checks (`ReadinessCheckRunner`) queda diseñado para que agregar los
 solo registrar un nuevo bean — no hace falta tocar el runner cuando se implementen (payment tape fetching
 es VPR-9662+, historial de ejecuciones todavía no tiene ticket). El calendario de feriados por país
 tampoco existe aún — el check de día hábil hoy solo valida fin de semana.
+
+### Corrección de atribución (2026-08-24)
+El AC #1 (defaults de config al guardar) y el trabajo de `UpdateReadinessChecksConfigUseCase`
+descrito acá en realidad pertenecen a VPR-9637/9638 (config), no a VPR-9661 (que es puramente el
+motor de ejecución — AC #2, #3 y #4 sí son de este ticket). Ver
+`specs/20260824-134720_readiness-checks-per-check-failure-behavior-vpr-9637-9638/` para la
+corrección completa, incluyendo el rediseño de `failureAction`/`retry` a por-check.

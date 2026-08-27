@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckContext;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckOutcome;
+import com.getvaas.distribution.engine.domain.model.ReadinessCheckSetting;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckType;
 import com.getvaas.distribution.engine.domain.service.readiness.ReadinessCheckRunner;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class RunReadinessChecksUseCase {
         var config = resolveActiveDistributionConfigUseCase.execute(companyId);
         var readinessChecksConfig = config.config().readinessChecks();
         var enabledChecks = readinessChecksConfig != null
-                ? readinessChecksConfig.enabledChecks()
+                ? readinessChecksConfig.checks().stream().map(ReadinessCheckSetting::type).toList()
                 : List.<ReadinessCheckType>of();
 
         var context = new ReadinessCheckContext(companyId, date, config.config().country());
