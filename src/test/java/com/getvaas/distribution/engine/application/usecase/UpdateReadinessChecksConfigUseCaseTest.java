@@ -40,7 +40,7 @@ class UpdateReadinessChecksConfigUseCaseTest {
     private UpdateReadinessChecksConfigUseCase useCase;
 
     private DistributionConfig existingDomain() {
-        var payload = new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
+        var payload = new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null,
                 DistributionConfigStatus.DRAFT, payload, LocalDateTime.now(), LocalDateTime.now(), null, null);
     }

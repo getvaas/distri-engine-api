@@ -33,7 +33,7 @@ class ActivateDistributionConfigUseCaseTest {
     private ActivateDistributionConfigUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
-            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
+            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
 
     @Test
     void execute_noOtherActiveConfig_activatesTarget() {

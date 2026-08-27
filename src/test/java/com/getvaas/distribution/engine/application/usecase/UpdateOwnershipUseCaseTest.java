@@ -39,7 +39,7 @@ class UpdateOwnershipUseCaseTest {
     private UpdateOwnershipUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
-            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
+            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
 
     private DistributionConfig existingDomain() {
         return new DistributionConfig("id-1", "Deal", 3L, 3L,
@@ -188,7 +188,7 @@ class UpdateOwnershipUseCaseTest {
     @Test
     void execute_preservesRestOfPayload() {
         var entity = DistributionEngineConfigEntity.builder().id("id-1").build();
-        var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null);
+        var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null, null);
         when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(new DistributionConfig("id-1", "Deal", 3L, 3L,
                 DistributionConfigStatus.DRAFT, existingPayload, LocalDateTime.now(), LocalDateTime.now(), null, null));

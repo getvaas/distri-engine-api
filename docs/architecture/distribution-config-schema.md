@@ -19,7 +19,7 @@ configuran; Pool Strategy es leído por VPR-9662 (`FetchCandidatePaymentTapesUse
 candidatos reales de `payment_tape`. Ver `docs/proceso-distribucion-unificado.md` para el pipeline
 de ejecución completo.
 
-## Los 8 nodos
+## Los 9 nodos
 
 | Nodo | Campo en `DistributionConfigPayload` | Estado | Ticket(s) — config (Pista A) |
 |---|---|---|---|
@@ -31,6 +31,7 @@ de ejecución completo.
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
+| Transfer Instructions | `transferInstructions` → `TransferInstructionsConfig` | ✅ Tipado (scope mínimo) | VPR-9713 |
 
 ## Detalle de los nodos ya tipados
 
@@ -123,6 +124,25 @@ sin resolver: SFTP (E7b) sin lugar en la config; caso Inklusiva de 2 audiencias 
 `body` (cuerpo del mensaje) **no está modelado** — bloqueado por una pregunta sin responder sobre
 notifications-api, no es una decisión de negocio nuestra.
 
+### Transfer Instructions (`transferInstructions`)
+```
+TransferInstructionsConfig
+└── templateOwnerCodes: [String]                                       — VPR-9713
+```
+Referencia liviana a `owner_dictionary.json` (S3, externo, variable de entorno de infraestructura
+global) — el resto de los datos del owner (`owner_company_id`, `from_account_id`, `to_account_id`,
+`reserve_amount`, `balance_rule`) sigue viviendo únicamente en ese diccionario, nunca copiado acá.
+No se agrega `ownerCompanyId` por deal: es redundante con `companyId`, que ya vive en la raíz de
+`DistributionConfig` (una distribución siempre es de una company particular). Tampoco se agrega
+`masterServicerId`: ya es implícito vía `masterTrustId` en la raíz.
+
+La unicidad de `templateOwnerCode` es **por registro** (mismo `distribution_engine_config`), no
+global — el mismo código puede repetirse entre distintos deals sin conflicto.
+
+Relacionado, explícitamente fuera de alcance: VPR-9714 agrega un campo `namespace` por assignment
+para matching de metadata; VPR-9715 es alta de documentos y guarda su `templateId`, no toca esta
+lista.
+
 ## Endpoints por nodo
 
 Cada nodo tipado tiene su propio `PUT` — no hay un único endpoint gigante que actualice todo el
@@ -137,6 +157,7 @@ payload de una vez (salvo `PUT /configs/{id}`, que solo cubre Deal Info):
 | `PUT /configs/{id}/ownership` | Ownership |
 | `PUT /configs/{id}/readiness-checks` | Readiness Checks |
 | `PUT /configs/{id}/notifications` | Notifications (channels/events + templates juntas) |
+| `PUT /configs/{id}/transfer-instructions` | Transfer Instructions |
 
 Virtual Columns todavía no tiene endpoint propio — se agrega cuando se tipe.
 

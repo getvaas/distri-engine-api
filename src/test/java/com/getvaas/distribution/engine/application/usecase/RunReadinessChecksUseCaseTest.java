@@ -41,7 +41,7 @@ class RunReadinessChecksUseCaseTest {
 
     private DistributionConfig activeConfigWith(ReadinessChecksConfig readinessChecksConfig) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, readinessChecksConfig, null);
+                null, null, null, null, null, readinessChecksConfig, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null,
                 DistributionConfigStatus.ACTIVE, payload, LocalDateTime.now(), LocalDateTime.now(), null, null);
     }

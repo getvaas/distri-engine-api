@@ -12,6 +12,7 @@ import com.getvaas.distribution.engine.application.usecase.UpdateNotificationsUs
 import com.getvaas.distribution.engine.application.usecase.UpdateOwnershipUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdatePoolConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateReadinessChecksConfigUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdateTransferInstructionsUseCase;
 import com.getvaas.distribution.engine.infrastructure.web.dto.CreateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfigResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ReadinessCheckOutcomeResponse;
@@ -22,6 +23,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipReq
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFiltersRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateReadinessChecksConfigRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateTransferInstructionsRequest;
 import com.getvaas.security.annotation.VaasSecurity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,7 @@ public class DistributionConfigRouter {
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
     private final RunReadinessChecksUseCase runReadinessChecksUseCase;
     private final UpdateNotificationsUseCase updateNotificationsUseCase;
+    private final UpdateTransferInstructionsUseCase updateTransferInstructionsUseCase;
 
     @VaasSecurity
     @GetMapping("/active")
@@ -129,6 +132,13 @@ public class DistributionConfigRouter {
     public DistributionConfigResponse updateNotifications(
             @PathVariable String id, @Valid @RequestBody UpdateNotificationsRequest request) {
         return DistributionConfigResponse.from(updateNotificationsUseCase.execute(id, request));
+    }
+
+    @VaasSecurity
+    @PutMapping("/{id}/transfer-instructions")
+    public DistributionConfigResponse updateTransferInstructions(
+            @PathVariable String id, @Valid @RequestBody UpdateTransferInstructionsRequest request) {
+        return DistributionConfigResponse.from(updateTransferInstructionsUseCase.execute(id, request));
     }
 
     @VaasSecurity

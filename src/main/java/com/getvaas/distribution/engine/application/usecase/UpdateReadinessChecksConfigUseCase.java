@@ -55,7 +55,8 @@ public class UpdateReadinessChecksConfigUseCase {
                 existing.config().rules(),
                 existing.config().ownership(),
                 readinessChecksConfig,
-                existing.config().notifications()
+                existing.config().notifications(),
+                existing.config().transferInstructions()
         );
 
         entity.setConfigJson(mapper.serializeConfig(updatedPayload));

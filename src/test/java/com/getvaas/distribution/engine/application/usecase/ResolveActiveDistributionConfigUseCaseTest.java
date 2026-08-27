@@ -34,7 +34,7 @@ class ResolveActiveDistributionConfigUseCaseTest {
         var entity = DistributionEngineConfigEntity.builder().id("id-1").companyId(3L)
                 .status(DistributionConfigStatus.ACTIVE).build();
         var domain = new DistributionConfig("id-1", "Deal", 3L, null, DistributionConfigStatus.ACTIVE,
-                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null),
+                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
 
         when(repository.findByCompanyIdAndStatusAndDeletedFalse(3L, DistributionConfigStatus.ACTIVE))

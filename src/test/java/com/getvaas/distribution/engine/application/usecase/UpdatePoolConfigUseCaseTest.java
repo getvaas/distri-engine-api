@@ -39,7 +39,7 @@ class UpdatePoolConfigUseCaseTest {
     private UpdatePoolConfigUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
-            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
+            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
 
     private DistributionConfig existingDomain(DistributionConfigPayload payload) {
         return new DistributionConfig("id-1", "Deal", 3L, 3L,
@@ -56,7 +56,7 @@ class UpdatePoolConfigUseCaseTest {
 
     @Test
     void execute_noFieldsProvided_defaultsToPaymentTapeWithNetAmountAnd90DaysBack() {
-        mockExisting(new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null));
+        mockExisting(new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null, null));
 
         useCase.execute("id-1", new UpdatePoolConfigRequest(null, null, null, null));
 
@@ -100,7 +100,7 @@ class UpdatePoolConfigUseCaseTest {
 
     @Test
     void execute_preservesDealInfoFields() {
-        mockExisting(new DistributionConfigPayload("Mexico (MEX)", "MXN", null, null, null, null, null, null, null));
+        mockExisting(new DistributionConfigPayload("Mexico (MEX)", "MXN", null, null, null, null, null, null, null, null));
 
         useCase.execute("id-1", new UpdatePoolConfigRequest(null, null, null, null));
 

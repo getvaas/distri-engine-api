@@ -34,7 +34,7 @@ class GetDistributionConfigUseCaseTest {
         var entity = DistributionEngineConfigEntity.builder().id("id-1").name("Test").build();
         var domain = new DistributionConfig(
                 "id-1", "Test", 1L, null, DistributionConfigStatus.DRAFT,
-                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null),
+                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null
         );
 
