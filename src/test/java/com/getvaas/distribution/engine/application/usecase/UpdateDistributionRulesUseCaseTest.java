@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +50,7 @@ class UpdateDistributionRulesUseCaseTest {
         var entity = DistributionEngineConfigEntity.builder().id("id-1").build();
         when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(existingDomain(payload));
-        when(repository.save(entity)).thenReturn(entity);
+        lenient().when(repository.save(entity)).thenReturn(entity);
     }
 
     private DistributionRulesConfig captureSavedRules() {
