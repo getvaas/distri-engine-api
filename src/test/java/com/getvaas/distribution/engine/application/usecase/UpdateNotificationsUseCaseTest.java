@@ -13,6 +13,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.DocumentTemplateRe
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateNotificationChannelsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateNotificationTemplatesRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateNotificationsRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateSftpDeliveryRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +51,7 @@ class UpdateNotificationsUseCaseTest {
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
         when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(existing);
-        when(repository.save(entity)).thenReturn(entity);
+        lenient().when(repository.save(entity)).thenReturn(entity);
     }
 
     private NotificationsConfig captureSavedNotifications() {
@@ -65,7 +67,7 @@ class UpdateNotificationsUseCaseTest {
                 new UpdateNotificationChannelsRequest(
                         List.of(NotificationChannel.SLACK, NotificationChannel.EMAIL),
                         List.of(NotificationEvent.DISTRIBUTION_SUCCEEDED, NotificationEvent.DISTRIBUTION_FAILED)),
-                null);
+                null, null);
 
         useCase.execute("id-1", request);
 
@@ -83,7 +85,8 @@ class UpdateNotificationsUseCaseTest {
                         "Distribution SOMOS - {{date}}",
                         List.of("ops@getvaas.com", "lender@architect.com"),
                         List.of(new DocumentTemplateRefRequest(
-                                "SOMOS_TRANSFER_INSTRUCTION_V2", "transfer_instruction_v2.docx", "Transfer instruction", "PDF"))));
+                                "SOMOS_TRANSFER_INSTRUCTION_V2", "transfer_instruction_v2.docx", "Transfer instruction", "PDF"))),
+                null);
 
         useCase.execute("id-1", request);
 
@@ -100,7 +103,8 @@ class UpdateNotificationsUseCaseTest {
         mockExisting();
         var request = new UpdateNotificationsRequest(null,
                 new UpdateNotificationTemplatesRequest(null, null,
-                        List.of(new DocumentTemplateRefRequest(null, "file.docx", null, null))));
+                        List.of(new DocumentTemplateRefRequest(null, "file.docx", null, null))),
+                null);
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -111,7 +115,8 @@ class UpdateNotificationsUseCaseTest {
         mockExisting();
         var request = new UpdateNotificationsRequest(null,
                 new UpdateNotificationTemplatesRequest(null, null,
-                        List.of(new DocumentTemplateRefRequest("NAME", null, null, null))));
+                        List.of(new DocumentTemplateRefRequest("NAME", null, null, null))),
+                null);
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -120,7 +125,7 @@ class UpdateNotificationsUseCaseTest {
     @Test
     void execute_channelsNotSent_persistsNullWithoutError() {
         mockExisting();
-        var request = new UpdateNotificationsRequest(null, null);
+        var request = new UpdateNotificationsRequest(null, null, null);
 
         useCase.execute("id-1", request);
 
@@ -131,7 +136,7 @@ class UpdateNotificationsUseCaseTest {
     @Test
     void execute_templatesNotSent_persistsNullWithoutError() {
         mockExisting();
-        var request = new UpdateNotificationsRequest(null, null);
+        var request = new UpdateNotificationsRequest(null, null, null);
 
         useCase.execute("id-1", request);
 
@@ -148,11 +153,96 @@ class UpdateNotificationsUseCaseTest {
                 DistributionConfigStatus.DRAFT, existingPayload, LocalDateTime.now(), LocalDateTime.now(), null, null));
         when(repository.save(entity)).thenReturn(entity);
 
-        useCase.execute("id-1", new UpdateNotificationsRequest(null, null));
+        useCase.execute("id-1", new UpdateNotificationsRequest(null, null, null));
 
         var captor = ArgumentCaptor.forClass(DistributionConfigPayload.class);
         verify(mapper).serializeConfig(captor.capture());
         assertThat(captor.getValue().country()).isEqualTo("Colombia (COL)");
         assertThat(captor.getValue().currency()).isEqualTo("COP");
+    }
+
+    // ===== SFTP Delivery (VPR-9721) =====
+
+    @Test
+    void execute_sftpDeliveryEnabledWithRequiredFields_persistsAsIs() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null,
+                new UpdateSftpDeliveryRequest(true, "5da3f818-b8ef-4db5-972f-6422f18e72f4",
+                        "/Movimientos/Input/{account}/{yyyy}/{MM}/{dd}/", "{prefix}{ddMMyyyy}{HHmmss}", null));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedNotifications();
+        assertThat(saved.sftpDelivery().enabled()).isTrue();
+        assertThat(saved.sftpDelivery().credentialKey()).isEqualTo("5da3f818-b8ef-4db5-972f-6422f18e72f4");
+        assertThat(saved.sftpDelivery().remotePathTemplate()).isEqualTo("/Movimientos/Input/{account}/{yyyy}/{MM}/{dd}/");
+        assertThat(saved.sftpDelivery().fileNameTemplate()).isEqualTo("{prefix}{ddMMyyyy}{HHmmss}");
+        assertThat(saved.sftpDelivery().encryptionKeyRef()).isNull();
+    }
+
+    @Test
+    void execute_sftpDeliveryEnabledWithEncryptionKeyRef_persistsAsIs() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null,
+                new UpdateSftpDeliveryRequest(true, "cred-key", "/path/", "file.txt", "liquitech-pgp-key"));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedNotifications();
+        assertThat(saved.sftpDelivery().encryptionKeyRef()).isEqualTo("liquitech-pgp-key");
+    }
+
+    @Test
+    void execute_sftpDeliveryEnabledWithoutCredentialKey_throwsInvalidDistributionConfigException() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null,
+                new UpdateSftpDeliveryRequest(true, null, "/path/", "file.txt", null));
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_sftpDeliveryEnabledWithoutRemotePathTemplate_throwsInvalidDistributionConfigException() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null,
+                new UpdateSftpDeliveryRequest(true, "cred-key", null, "file.txt", null));
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_sftpDeliveryEnabledWithoutFileNameTemplate_throwsInvalidDistributionConfigException() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null,
+                new UpdateSftpDeliveryRequest(true, "cred-key", "/path/", null, null));
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_sftpDeliveryDisabledWithoutRequiredFields_doesNotThrow() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null,
+                new UpdateSftpDeliveryRequest(false, null, null, null, null));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedNotifications();
+        assertThat(saved.sftpDelivery().enabled()).isFalse();
+        assertThat(saved.sftpDelivery().credentialKey()).isNull();
+    }
+
+    @Test
+    void execute_sftpDeliveryNotSent_persistsNullWithoutError() {
+        mockExisting();
+        var request = new UpdateNotificationsRequest(null, null, null);
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedNotifications();
+        assertThat(saved.sftpDelivery()).isNull();
     }
 }

@@ -100,11 +100,21 @@ NotificationsConfig
 │   ├── channels: [NotificationChannel] (SLACK | EMAIL | WEBHOOK | ROAM)
 │   └── enabledEvents: [NotificationEvent] (DISTRIBUTION_SUCCEEDED | DISTRIBUTION_FAILED |
 │                        READINESS_CHECK_FAILED | OWNERLESS_PAYMENT_TAPES | TRANSFER_INSTRUCTION_READY)
-└── templates: NotificationTemplatesConfig                              — VPR-9640
-    ├── subject: String
-    ├── recipients: [String] (lista plana)
-    └── documents: [DocumentTemplateRef] (name, fileName, description, format libre)
+├── templates: NotificationTemplatesConfig                              — VPR-9640
+│   ├── subject: String
+│   ├── recipients: [String] (lista plana)
+│   └── documents: [DocumentTemplateRef] (name, fileName, description, format libre)
+└── sftpDelivery: SftpDeliveryConfig                                    — VPR-9721
+    ├── enabled: boolean
+    ├── credentialKey: String        (facility_id, referencia a Secrets Manager)
+    ├── remotePathTemplate: String   (soporta placeholders: {account}/{yyyy}/{MM}/{dd})
+    ├── fileNameTemplate: String     (soporta placeholders)
+    └── encryptionKeyRef: String?    (referencia a la key PGP, nunca en texto plano)
 ```
+`sftpDelivery` nunca guarda credenciales ni llaves — solo referencias externas (mismo patrón que
+el motor real: un Lambda compartido resuelve host/user/pass/PGP key desde AWS Secrets Manager por
+`credentialKey`/`facility_id`). No es un valor más de `NotificationChannel` porque necesita una
+referencia de conexión estructurada, no solo un nombre de canal.
 Verificado contra el mockup real (`docs/distribution-engine-onboarding.html` STEP 7), no solo el
 texto de los tickets — 2 correcciones sobre lo que el ticket sugería: `channels` mezcla canales
 internos (Slack, ROAM) con el canal cliente (Email) en un solo selector plano, sin SFTP; y
