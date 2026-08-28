@@ -8,6 +8,7 @@ import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentFilterCondition;
+import com.getvaas.distribution.engine.domain.model.RemainingBalanceConfig;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
@@ -15,6 +16,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyCon
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.DeductionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.RemainingBalanceConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -40,7 +42,8 @@ public class UpdateDistributionRulesUseCase {
                 .orElseThrow(() -> new DistributionConfigNotFoundException(id));
         var existing = mapper.toDomain(entity);
 
-        var rules = buildDistributionRulesConfig(request.hasComponentOwners(), request.componentOwners());
+        var rules = buildDistributionRulesConfig(request.hasComponentOwners(), request.componentOwners(),
+                request.remainingBalance());
 
         var updatedPayload = new DistributionConfigPayload(
                 existing.config().country(),
@@ -62,11 +65,13 @@ public class UpdateDistributionRulesUseCase {
         return mapper.toDomain(saved);
     }
 
-    private DistributionRulesConfig buildDistributionRulesConfig(Boolean hasComponentOwners, List<ComponentOwnerRuleRequest> ruleRequests) {
+    private DistributionRulesConfig buildDistributionRulesConfig(Boolean hasComponentOwners, List<ComponentOwnerRuleRequest> ruleRequests,
+            RemainingBalanceConfigRequest remainingBalanceRequest) {
         var enabled = Boolean.TRUE.equals(hasComponentOwners);
+        var remainingBalance = buildRemainingBalanceConfig(remainingBalanceRequest);
 
         if (ruleRequests == null || ruleRequests.isEmpty()) {
-            return new DistributionRulesConfig(enabled, List.of());
+            return new DistributionRulesConfig(enabled, List.of(), remainingBalance);
         }
 
         var seenComponents = new HashSet<>();
@@ -74,7 +79,14 @@ public class UpdateDistributionRulesUseCase {
                 .map(r -> buildComponentOwnerRule(r, seenComponents))
                 .toList();
 
-        return new DistributionRulesConfig(enabled, componentOwners);
+        return new DistributionRulesConfig(enabled, componentOwners, remainingBalance);
+    }
+
+    private RemainingBalanceConfig buildRemainingBalanceConfig(RemainingBalanceConfigRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return new RemainingBalanceConfig(request.component(), request.destinationAccountId());
     }
 
     private ComponentOwnerRule buildComponentOwnerRule(ComponentOwnerRuleRequest ruleRequest, HashSet<Object> seenComponents) {

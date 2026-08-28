@@ -27,7 +27,7 @@ de ejecución completo.
 | Pool Strategy | `pool` → `PoolConfig` | ✅ Tipado (parcial — ver abajo) | VPR-9628, VPR-9629, VPR-9630 |
 | Payment Filters | `paymentFilters` → `PaymentFiltersConfig` | ✅ Tipado (completo) | VPR-9631, VPR-9632, VPR-9633, VPR-9634 |
 | Virtual Columns | `virtualColumns` → `JsonNode` | ⏳ Placeholder | sin ticket de estructura aún |
-| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9702, VPR-9703, VPR-9704 |
+| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9702, VPR-9703, VPR-9704, VPR-9705 |
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
@@ -59,6 +59,9 @@ PaymentFiltersConfig
 ```
 DistributionRulesConfig
 ├── hasComponentOwners: boolean                                        — VPR-9699
+├── remainingBalance: RemainingBalanceConfig, opcional                 — VPR-9705
+│   ├── component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE
+│   └── destinationAccountId: Long
 └── componentOwners: [ComponentOwnerRule]
     ├── component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE
     ├── owner: String
@@ -86,6 +89,8 @@ DistributionRulesConfig
                     (ALWAYS | ONCE_PER_DISTRIBUTION | ONCE_PER_MONTH | ONCE_PER_WEEK)
 ```
 Scope mínimo (VPR-9643). `hasComponentOwners` declara si el deal usa esta asignación o no.
+`remainingBalance` es global al deal (a diferencia de todo lo demás en este nodo) — aplica una
+sola vez, después de aplicar TODAS las reglas anteriores de la cascada, al remanente sin asignar.
 `balanceStrategy` vive por regla (owner+componente), no global al deal, porque cada owner puede
 necesitar una estrategia distinta. `accountTransferRules` es una lista porque bajo el mismo owner
 pueden convivir varias combinaciones from/to/condición distintas (ej. "si contract_id=X mover de
@@ -98,8 +103,8 @@ estos campos tiene validación cruzada con los demás al guardar (ni `hasCompone
 mientras la config no esté `ACTIVE`, mismo criterio del resto del proyecto. El cálculo real del
 monto y la resolución del
 balance en tiempo de ejecución son responsabilidad de la etapa de ejecución (Pista B), fuera de
-alcance de este repo. Explícitamente pendientes, sin resolver todavía: fees/deducciones,
-multi-moneda por regla, remanente/cascada, impuestos y seguros (no tienen columna propia hoy —
+alcance de este repo. Explícitamente pendientes, sin resolver todavía: orden de la cascada de
+pagos (VPR-9700), multi-moneda por regla, impuestos y seguros (no tienen columna propia hoy —
 `PaymentComponent` tampoco tiene un valor para "impuestos" todavía, gap conocido).
 
 ### Ownership (`ownership`)
