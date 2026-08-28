@@ -63,11 +63,11 @@ class UpdateTransferInstructionsUseCaseTest {
         useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of("PAYJOY", "FINAMCO")));
 
         var config = captureSavedPayload().transferInstructions();
-        assertThat(config.templateOwnerCodes()).containsExactly("PAYJOY", "FINAMCO");
+        assertThat(config.ownerTemplateCodes()).containsExactly("PAYJOY", "FINAMCO");
     }
 
     @Test
-    void execute_duplicateTemplateOwnerCode_throwsInvalidDistributionConfigException() {
+    void execute_duplicateOwnerTemplateCode_throwsInvalidDistributionConfigException() {
         mockExisting();
 
         var request = new UpdateTransferInstructionsRequest(List.of("PAYJOY", "PAYJOY"));
@@ -83,7 +83,7 @@ class UpdateTransferInstructionsUseCaseTest {
         useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of()));
 
         var config = captureSavedPayload().transferInstructions();
-        assertThat(config.templateOwnerCodes()).isEmpty();
+        assertThat(config.ownerTemplateCodes()).isEmpty();
     }
 
     @Test
@@ -93,7 +93,7 @@ class UpdateTransferInstructionsUseCaseTest {
         useCase.execute("id-1", new UpdateTransferInstructionsRequest(null));
 
         var config = captureSavedPayload().transferInstructions();
-        assertThat(config.templateOwnerCodes()).isEmpty();
+        assertThat(config.ownerTemplateCodes()).isEmpty();
     }
 
     @Test

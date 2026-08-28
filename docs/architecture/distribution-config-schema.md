@@ -127,7 +127,7 @@ notifications-api, no es una decisión de negocio nuestra.
 ### Transfer Instructions (`transferInstructions`)
 ```
 TransferInstructionsConfig
-└── templateOwnerCodes: [String]                                       — VPR-9713
+└── ownerTemplateCodes: [String]                                       — VPR-9713
 ```
 Referencia liviana a `owner_dictionary.json` (S3, externo, variable de entorno de infraestructura
 global) — el resto de los datos del owner (`owner_company_id`, `from_account_id`, `to_account_id`,
@@ -136,7 +136,7 @@ No se agrega `ownerCompanyId` por deal: es redundante con `companyId`, que ya vi
 `DistributionConfig` (una distribución siempre es de una company particular). Tampoco se agrega
 `masterServicerId`: ya es implícito vía `masterTrustId` en la raíz.
 
-La unicidad de `templateOwnerCode` es **por registro** (mismo `distribution_engine_config`), no
+La unicidad de `ownerTemplateCode` es **por registro** (mismo `distribution_engine_config`), no
 global — el mismo código puede repetirse entre distintos deals sin conflicto.
 
 Relacionado, explícitamente fuera de alcance: VPR-9714 agrega un campo `namespace` por assignment

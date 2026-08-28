@@ -6,7 +6,7 @@
 
 ### Goal
 Agregar un 9º nodo `transferInstructions` a `DistributionConfigPayload` que declara, por deal, qué
-`templateOwnerCode` están asignados — sin duplicar los datos del `owner_dictionary.json` externo,
+`ownerTemplateCode` están asignados — sin duplicar los datos del `owner_dictionary.json` externo,
 que sigue siendo la única fuente de verdad para cuentas, montos y regla de balance por owner.
 
 ### Context
@@ -27,14 +27,14 @@ que sigue siendo la única fuente de verdad para cuentas, montos y regla de bala
 - `docs/architecture/distribution-config-schema.md` — pasa de documentar 8 a 9 nodos.
 
 ### Public Contracts
-- **Domain**: `TransferInstructionsConfig(List<String> templateOwnerCodes)` —
+- **Domain**: `TransferInstructionsConfig(List<String> ownerTemplateCodes)` —
   `@JsonIgnoreProperties(ignoreUnknown = true)`.
-- **DTO**: `UpdateTransferInstructionsRequest(List<String> templateOwnerCodes)`.
+- **DTO**: `UpdateTransferInstructionsRequest(List<String> ownerTemplateCodes)`.
 - **Services**: `UpdateTransferInstructionsUseCase.execute(String id, UpdateTransferInstructionsRequest request): DistributionConfig`.
 - **Endpoint**: `PUT /configs/{id}/transfer-instructions` en `DistributionConfigRouter`.
 - **Tests**: `UpdateTransferInstructionsUseCaseTest` —
   - `execute_noDuplicates_persistsList`
-  - `execute_duplicateTemplateOwnerCode_throwsInvalidDistributionConfigException`
+  - `execute_duplicateOwnerTemplateCode_throwsInvalidDistributionConfigException`
   - `execute_emptyList_persistsEmptyList`
   - `execute_nullList_persistsEmptyList`
   - `execute_updatesTransferInstructions_preservesRestOfPayload`
@@ -51,7 +51,7 @@ que sigue siendo la única fuente de verdad para cuentas, montos y regla de bala
       busca entity por id, mapea a domain, reconstruye `DistributionConfigPayload` completo
       (10 campos, resto de `existing.config()` sin tocar), serializa, guarda
 - [x] Lista `null` o vacía → persiste `List.of()`, sin error
-- [x] `templateOwnerCode` repetido dentro de la misma lista →
+- [x] `ownerTemplateCode` repetido dentro de la misma lista →
       `InvalidDistributionConfigException`
 - [x] Sin unicidad global entre distintos registros — no se valida contra otras configs
 
@@ -62,7 +62,7 @@ que sigue siendo la única fuente de verdad para cuentas, montos y regla de bala
 
 #### Phase 4: Tests
 - [x] `execute_noDuplicates_persistsList` — lista sin duplicados persiste tal cual
-- [x] `execute_duplicateTemplateOwnerCode_throwsInvalidDistributionConfigException`
+- [x] `execute_duplicateOwnerTemplateCode_throwsInvalidDistributionConfigException`
 - [x] `execute_emptyList_persistsEmptyList`
 - [x] `execute_nullList_persistsEmptyList`
 - [x] `execute_updatesTransferInstructions_preservesRestOfPayload` — no pisa pool/ownership/etc.

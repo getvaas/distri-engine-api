@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * Configura la etapa Transfer Instructions — qué templateOwnerCode están asignados a este deal
+ * Configura la etapa Transfer Instructions — qué ownerTemplateCode están asignados a este deal
  * (VPR-9713). Es una referencia liviana a owner_dictionary.json (S3, externo) — el resto de los
  * datos del owner no se duplica acá.
  */
@@ -30,7 +30,7 @@ public class UpdateTransferInstructionsUseCase {
                 .orElseThrow(() -> new DistributionConfigNotFoundException(id));
         var existing = mapper.toDomain(entity);
 
-        var transferInstructions = buildTransferInstructionsConfig(request.templateOwnerCodes());
+        var transferInstructions = buildTransferInstructionsConfig(request.ownerTemplateCodes());
 
         var updatedPayload = new DistributionConfigPayload(
                 existing.config().country(),
@@ -52,19 +52,19 @@ public class UpdateTransferInstructionsUseCase {
         return mapper.toDomain(saved);
     }
 
-    private TransferInstructionsConfig buildTransferInstructionsConfig(List<String> templateOwnerCodes) {
-        if (templateOwnerCodes == null || templateOwnerCodes.isEmpty()) {
+    private TransferInstructionsConfig buildTransferInstructionsConfig(List<String> ownerTemplateCodes) {
+        if (ownerTemplateCodes == null || ownerTemplateCodes.isEmpty()) {
             return new TransferInstructionsConfig(List.of());
         }
 
         var seenCodes = new HashSet<String>();
-        for (var code : templateOwnerCodes) {
+        for (var code : ownerTemplateCodes) {
             if (!seenCodes.add(code)) {
                 throw new InvalidDistributionConfigException(
-                        "el templateOwnerCode " + code + " está repetido en 'templateOwnerCodes'");
+                        "el ownerTemplateCode " + code + " está repetido en 'ownerTemplateCodes'");
             }
         }
 
-        return new TransferInstructionsConfig(templateOwnerCodes);
+        return new TransferInstructionsConfig(ownerTemplateCodes);
     }
 }

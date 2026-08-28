@@ -15,13 +15,13 @@ sin duplicar el resto de los datos del owner, que siguen viviendo únicamente en
 externo.
 
 ### Acceptance Criteria
-- [x] **Given** una lista de `templateOwnerCodes` sin duplicados, **When** se guarda la config,
+- [x] **Given** una lista de `ownerTemplateCodes` sin duplicados, **When** se guarda la config,
   **Then** persiste tal cual.
-- [x] **Given** una lista de `templateOwnerCodes` con al menos un valor repetido **dentro del
+- [x] **Given** una lista de `ownerTemplateCodes` con al menos un valor repetido **dentro del
   mismo registro** (misma `DistributionConfig`), **When** se intenta guardar, **Then** se rechaza
   — un mismo código asignado dos veces en el mismo deal no aporta información nueva y es indicio
   de error de carga.
-- [x] **Given** un `templateOwnerCode` que ya está asignado en **otro** registro
+- [x] **Given** un `ownerTemplateCode` que ya está asignado en **otro** registro
   (`DistributionConfig` distinto), **When** se guarda, **Then** no hay conflicto — la unicidad es
   por registro, no global: el mismo owner/plantilla puede estar asignado en varios deals distintos
   al mismo tiempo.
@@ -34,7 +34,7 @@ de entorno de infraestructura global, no algo que el wizard configure por deal �
 esta historia. Ese diccionario ya trae, por cada entrada, `owner_company_id`, `owner_name`,
 `from_account_id`, `to_account_id`, `reserve_amount`, `balance_rule` y `template_code`.
 
-La unicidad de `templateOwnerCode` aplica solo dentro de un mismo registro de
+La unicidad de `ownerTemplateCode` aplica solo dentro de un mismo registro de
 `distribution_engine_config` — no es una restricción global. El mismo código puede repetirse entre
 distintos deals sin problema; lo que no puede pasar es que el mismo deal asigne el mismo código dos
 veces.
@@ -46,9 +46,9 @@ tener varias configs. Esta historia agrega un único campo de config (qué plant
 asignadas), no una copia de la fila completa del diccionario, que además va a terminar siendo su
 propia tabla más adelante. Por el mismo motivo tampoco se agrega un identificador de
 `master_servicer_id`: ya es implícito vía `masterTrustId` en la raíz de `DistributionConfig`, y un
-mismo `master_servicer_id` puede tener múltiples `templateOwnerCode` asignados sin problema.
+mismo `master_servicer_id` puede tener múltiples `ownerTemplateCode` asignados sin problema.
 
-El campo se llama `templateOwnerCode` (no `templateCode` a secas) para no confundirlo con otros
+El campo se llama `ownerTemplateCode` (no `templateCode` a secas) para no confundirlo con otros
 identificadores de plantilla del sistema — en particular, el `templateId` de documentos que se
 va a guardar por separado al cargar templates (ticket relacionado, fuera de este alcance).
 

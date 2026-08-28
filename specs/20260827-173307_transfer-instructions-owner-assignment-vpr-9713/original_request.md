@@ -40,15 +40,15 @@ para la asignación de owners en el template de instrucciones. El archivo será
   particular; una company puede tener varias configs).
 - Descartado también un campo `master_servicer_id` nuevo: ya es implícito vía `masterTrustId` en
   la raíz de `DistributionConfig`. Un mismo `master_servicer_id` puede tener múltiples
-  `templateOwnerCode` en la lista.
-- El campo se llama `templateOwnerCode` (no `templateCode`), para distinguirlo de otros
+  `ownerTemplateCode` en la lista.
+- El campo se llama `ownerTemplateCode` (no `templateCode`), para distinguirlo de otros
   identificadores de plantilla del sistema (ej. `templateId` de documentos en VPR-9715).
-- Regla de validación explícita del usuario: no se permiten duplicados de `templateOwnerCode`
+- Regla de validación explícita del usuario: no se permiten duplicados de `ownerTemplateCode`
   dentro de la lista ("no se puede repetir").
 - Modelo acordado:
   ```java
   public record TransferInstructionsConfig(
-          List<String> templateOwnerCodes
+          List<String> ownerTemplateCodes
   ) {}
   ```
 - Esto agrega un 9º nodo al payload de `DistributionConfigPayload` — hoy no existe ningún campo ni
