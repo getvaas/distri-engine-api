@@ -12,10 +12,14 @@ import java.util.List;
  * {@code condition} es opcional — una sola condición por regla (no un builder de grupos OR/AND
  * como Payment Filters), reusando directamente {@link PaymentFilterCondition} (VPR-9631). Sin
  * validación cruzada entre {@code fromAccountIds} y {@code toAccountIds}.
+ * <p>
+ * {@code deductions} (VPR-9704) declara las comisiones a descontar de esta transferencia — puede
+ * haber varias distintas bajo la misma regla.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AccountTransferRule(
         List<Long> fromAccountIds,
         List<Long> toAccountIds,
-        PaymentFilterCondition condition
+        PaymentFilterCondition condition,
+        List<Deduction> deductions
 ) {}
