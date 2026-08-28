@@ -6,5 +6,6 @@ public record ComponentOwnerRuleRequest(
         PaymentComponent component,
         String owner,
         String description,
-        BalanceStrategyConfigRequest balanceStrategy
+        BalanceStrategyConfigRequest balanceStrategy,
+        Boolean distributeAccountingPayments
 ) {}

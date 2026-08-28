@@ -27,7 +27,7 @@ de ejecución completo.
 | Pool Strategy | `pool` → `PoolConfig` | ✅ Tipado (parcial — ver abajo) | VPR-9628, VPR-9629, VPR-9630 |
 | Payment Filters | `paymentFilters` → `PaymentFiltersConfig` | ✅ Tipado (completo) | VPR-9631, VPR-9632, VPR-9633, VPR-9634 |
 | Virtual Columns | `virtualColumns` → `JsonNode` | ⏳ Placeholder | sin ticket de estructura aún |
-| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9702, VPR-9703, VPR-9704, VPR-9705 |
+| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9702, VPR-9703, VPR-9704, VPR-9705, VPR-9706 |
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
@@ -66,6 +66,7 @@ DistributionRulesConfig
     ├── component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE
     ├── owner: String
     ├── description: String, opcional
+    ├── distributeAccountingPayments: boolean, default false             — VPR-9706
     └── balanceStrategy: BalanceStrategyConfig, opcional                — VPR-9703
         ├── amountField: String (columna libre de payment_tape, mismo patrón que
         │                 PaymentTapePoolConfig.amountField de VPR-9628)
@@ -92,7 +93,10 @@ Scope mínimo (VPR-9643). `hasComponentOwners` declara si el deal usa esta asign
 `remainingBalance` es global al deal (a diferencia de todo lo demás en este nodo) — aplica una
 sola vez, después de aplicar TODAS las reglas anteriores de la cascada, al remanente sin asignar.
 `balanceStrategy` vive por regla (owner+componente), no global al deal, porque cada owner puede
-necesitar una estrategia distinta. `accountTransferRules` es una lista porque bajo el mismo owner
+necesitar una estrategia distinta. `distributeAccountingPayments` es un override independiente
+por componente, sin relación forzada con el flag equivalente a nivel deal
+(`AccountingPaymentsConfig.distributeAccountingPayments`, VPR-9631, nodo Payment Filters) — mismo
+nombre, records distintos. `accountTransferRules` es una lista porque bajo el mismo owner
 pueden convivir varias combinaciones from/to/condición distintas (ej. "si contract_id=X mover de
 cuenta 1 a cuenta 2" y "si gateway_code=Y mover de cuenta 3 a cuenta 4"). `deductions` declara las
 comisiones a descontar de una transferencia — mismo `accountId: Long` que `fromAccountIds`/
