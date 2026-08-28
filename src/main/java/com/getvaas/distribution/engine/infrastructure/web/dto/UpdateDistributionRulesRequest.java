@@ -4,5 +4,6 @@ import java.util.List;
 
 public record UpdateDistributionRulesRequest(
         Boolean hasComponentOwners,
-        List<ComponentOwnerRuleRequest> componentOwners
+        List<ComponentOwnerRuleRequest> componentOwners,
+        RemainingBalanceConfigRequest remainingBalance
 ) {}
