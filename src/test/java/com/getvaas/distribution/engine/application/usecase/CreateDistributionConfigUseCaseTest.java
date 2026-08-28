@@ -39,7 +39,7 @@ class CreateDistributionConfigUseCaseTest {
                 "generated-id", request.name(), request.companyId(), request.masterTrustId(),
                 DistributionConfigStatus.DRAFT,
                 new DistributionConfigPayload(request.country(), request.currency(),
-                        null, null, null, null, null, null, null),
+                        null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null
         );
 
@@ -63,7 +63,7 @@ class CreateDistributionConfigUseCaseTest {
         var savedDomain = new DistributionConfig(
                 "generated-id", request.name(), request.companyId(), null,
                 DistributionConfigStatus.DRAFT,
-                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null),
+                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null
         );
 

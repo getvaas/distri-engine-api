@@ -48,7 +48,7 @@ class UpdatePaymentFiltersUseCaseTest {
     private UpdatePaymentFiltersUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
-            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
+            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
     private static final AccountingPaymentsRequest NO_ACCOUNTING_PAYMENTS =
             new AccountingPaymentsRequest(false, null, null);
 
@@ -169,7 +169,7 @@ class UpdatePaymentFiltersUseCaseTest {
 
     @Test
     void execute_preservesRestOfPayload() {
-        var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null);
+        var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null, null);
         mockExisting(existingPayload);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null);
 

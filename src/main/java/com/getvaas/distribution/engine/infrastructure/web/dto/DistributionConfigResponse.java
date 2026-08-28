@@ -7,6 +7,7 @@ import com.getvaas.distribution.engine.domain.model.NotificationsConfig;
 import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
 import com.getvaas.distribution.engine.domain.model.PoolConfig;
 import com.getvaas.distribution.engine.domain.model.ReadinessChecksConfig;
+import com.getvaas.distribution.engine.domain.model.TransferInstructionsConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ public record DistributionConfigResponse(
         OwnershipConfig ownership,
         ReadinessChecksConfig readinessChecks,
         NotificationsConfig notifications,
+        TransferInstructionsConfig transferInstructions,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -43,6 +45,7 @@ public record DistributionConfigResponse(
                 domain.config() != null ? domain.config().ownership() : null,
                 domain.config() != null ? domain.config().readinessChecks() : null,
                 domain.config() != null ? domain.config().notifications() : null,
+                domain.config() != null ? domain.config().transferInstructions() : null,
                 domain.createdAt(),
                 domain.updatedAt()
         );

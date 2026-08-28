@@ -31,7 +31,7 @@ class DistributionConfigMapperTest {
     void toDomain_mapsAllFields() throws Exception {
         var payload = new DistributionConfigPayload(
                 "Colombia (COL)", "COP",
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
         var entity = DistributionEngineConfigEntity.builder()
                 .id("abc-123")
@@ -63,7 +63,7 @@ class DistributionConfigMapperTest {
     void toEntity_mapsAllFields() {
         var payload = new DistributionConfigPayload(
                 "Colombia (COL)", "COP",
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
         var domain = new DistributionConfig(
                 "abc-123", "SOMOS Internet - Distribution", 3L, 3L,
@@ -87,7 +87,7 @@ class DistributionConfigMapperTest {
     void roundTrip_configJson_noDataLoss() {
         var payload = new DistributionConfigPayload(
                 "Mexico (MEX)", "MXN",
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
         var domain = new DistributionConfig(
                 "xyz-999", "Round Trip", 1L, 1L,

@@ -50,7 +50,8 @@ public class UpdateNotificationsUseCase {
                 existing.config().rules(),
                 existing.config().ownership(),
                 existing.config().readinessChecks(),
-                notifications
+                notifications,
+                existing.config().transferInstructions()
         );
 
         entity.setConfigJson(mapper.serializeConfig(updatedPayload));

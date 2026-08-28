@@ -44,7 +44,8 @@ public class UpdateOwnershipUseCase {
                 existing.config().rules(),
                 ownership,
                 existing.config().readinessChecks(),
-                existing.config().notifications()
+                existing.config().notifications(),
+                existing.config().transferInstructions()
         );
 
         entity.setConfigJson(mapper.serializeConfig(updatedPayload));

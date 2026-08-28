@@ -38,7 +38,7 @@ class UpdateDistributionRulesUseCaseTest {
     private UpdateDistributionRulesUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
-            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null);
+            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
 
     private DistributionConfig existingDomain(DistributionConfigPayload payload) {
         return new DistributionConfig("id-1", "Deal", 3L, 3L,
@@ -120,7 +120,7 @@ class UpdateDistributionRulesUseCaseTest {
 
     @Test
     void execute_preservesRestOfPayload() {
-        var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null);
+        var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null, null);
         mockExisting(existingPayload);
         var request = new UpdateDistributionRulesRequest(null);
 

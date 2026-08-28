@@ -48,7 +48,7 @@ class FetchCandidatePaymentTapesUseCaseTest {
                 ? new PoolConfig(PoolStrategyType.PAYMENT_TAPE, new PaymentTapePoolConfig("net_amount", daysBack), null, null)
                 : null;
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                poolConfig, null, null, null, null, null, null);
+                poolConfig, null, null, null, null, null, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }

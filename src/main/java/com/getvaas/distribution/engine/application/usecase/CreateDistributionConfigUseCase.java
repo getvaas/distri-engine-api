@@ -23,7 +23,7 @@ public class CreateDistributionConfigUseCase {
         var now = LocalDateTime.now();
         var payload = new DistributionConfigPayload(
                 request.country(), request.currency(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
         var domain = new DistributionConfig(
                 UUID.randomUUID().toString(),

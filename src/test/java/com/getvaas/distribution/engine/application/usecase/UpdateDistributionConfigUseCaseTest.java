@@ -35,7 +35,7 @@ class UpdateDistributionConfigUseCaseTest {
     @Test
     void execute_validRequest_updatesDealInfoFieldsOnTheManagedEntity() {
         var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         var entity = DistributionEngineConfigEntity.builder().id("id-1").name("Old").build();
         var existingDomain = new DistributionConfig("id-1", "Old", 3L, null,
                 DistributionConfigStatus.DRAFT, existingPayload,
@@ -63,7 +63,7 @@ class UpdateDistributionConfigUseCaseTest {
     @Test
     void execute_onlyCountryProvided_preservesCurrencyFromExisting() {
         var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         var entity = DistributionEngineConfigEntity.builder().id("id-1").name("Name").build();
         var existingDomain = new DistributionConfig("id-1", "Name", 3L, null,
                 DistributionConfigStatus.DRAFT, existingPayload,

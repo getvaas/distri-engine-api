@@ -65,7 +65,8 @@ public class UpdatePoolConfigUseCase {
                 existing.config().rules(),
                 existing.config().ownership(),
                 existing.config().readinessChecks(),
-                existing.config().notifications()
+                existing.config().notifications(),
+                existing.config().transferInstructions()
         );
 
         entity.setConfigJson(mapper.serializeConfig(updatedPayload));
