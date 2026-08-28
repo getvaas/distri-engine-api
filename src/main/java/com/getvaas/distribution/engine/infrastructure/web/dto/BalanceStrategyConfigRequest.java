@@ -4,10 +4,12 @@ import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStra
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record BalanceStrategyConfigRequest(
         String amountField,
         BalanceSufficiencyStrategy sufficiencyStrategy,
         AmountDistributionStrategy distributionStrategy,
-        BigDecimal distributionValue
+        BigDecimal distributionValue,
+        List<AccountTransferRuleRequest> accountTransferRules
 ) {}

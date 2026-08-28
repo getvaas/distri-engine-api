@@ -27,7 +27,7 @@ de ejecución completo.
 | Pool Strategy | `pool` → `PoolConfig` | ✅ Tipado (parcial — ver abajo) | VPR-9628, VPR-9629, VPR-9630 |
 | Payment Filters | `paymentFilters` → `PaymentFiltersConfig` | ✅ Tipado (completo) | VPR-9631, VPR-9632, VPR-9633, VPR-9634 |
 | Virtual Columns | `virtualColumns` → `JsonNode` | ⏳ Placeholder | sin ticket de estructura aún |
-| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9703 |
+| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9702, VPR-9703 |
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
@@ -70,15 +70,23 @@ DistributionRulesConfig
         │       (SUFFICIENT_OR_STOP | UNTIL_EXHAUSTED | SKIP_IF_INSUFFICIENT | IGNORE_BALANCE)
         ├── distributionStrategy: AmountDistributionStrategy
         │       (DEFAULT | PROPORTIONAL_WEIGHT | PERCENTAGE_OF_POOL | PERCENTAGE_OF_REMAINING | FIXED_AMOUNT)
-        └── distributionValue: BigDecimal, opcional (peso/porcentaje/monto fijo según
-                    distributionStrategy; null cuando distributionStrategy=DEFAULT)
+        ├── distributionValue: BigDecimal, opcional (peso/porcentaje/monto fijo según
+        │           distributionStrategy; null cuando distributionStrategy=DEFAULT)
+        └── accountTransferRules: [AccountTransferRule], opcional          — VPR-9702
+            ├── fromAccountIds: [Long]
+            ├── toAccountIds: [Long]
+            └── condition: PaymentFilterCondition, opcional (mismo modelo que Payment Filters,
+                        VPR-9631 — una sola condición por regla, no builder de grupos OR/AND)
 ```
 Scope mínimo (VPR-9643). `hasComponentOwners` declara si el deal usa esta asignación o no.
 `balanceStrategy` vive por regla (owner+componente), no global al deal, porque cada owner puede
-necesitar una estrategia distinta. Ninguno de estos campos tiene validación cruzada con los demás
-al guardar (ni `hasComponentOwners` con `componentOwners`, ni `distributionStrategy` con
-`distributionValue`) — se permiten drafts parciales/inconsistentes mientras la config no esté
-`ACTIVE`, mismo criterio del resto del proyecto. El cálculo real del monto y la resolución del
+necesitar una estrategia distinta. `accountTransferRules` es una lista porque bajo el mismo owner
+pueden convivir varias combinaciones from/to/condición distintas (ej. "si contract_id=X mover de
+cuenta 1 a cuenta 2" y "si gateway_code=Y mover de cuenta 3 a cuenta 4"). Ninguno de estos campos
+tiene validación cruzada con los demás al guardar (ni `hasComponentOwners` con `componentOwners`,
+ni `distributionStrategy` con `distributionValue`, ni `fromAccountIds` con `toAccountIds`) — se
+permiten drafts parciales/inconsistentes mientras la config no esté `ACTIVE`, mismo criterio del
+resto del proyecto. El cálculo real del monto y la resolución del
 balance en tiempo de ejecución son responsabilidad de la etapa de ejecución (Pista B), fuera de
 alcance de este repo. Explícitamente pendientes, sin resolver todavía: fees/deducciones,
 multi-moneda por regla, remanente/cascada, impuestos y seguros (no tienen columna propia hoy —
