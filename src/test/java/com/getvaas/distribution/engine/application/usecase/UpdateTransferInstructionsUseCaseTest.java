@@ -7,6 +7,7 @@ import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStat
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.web.dto.TransferInstructionAssignmentRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateTransferInstructionsRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,23 +58,64 @@ class UpdateTransferInstructionsUseCaseTest {
     }
 
     @Test
-    void execute_noDuplicates_persistsList() {
+    void execute_validAssignments_persistsList() {
         mockExisting();
 
-        useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of("PAYJOY", "FINAMCO")));
+        useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of(
+                new TransferInstructionAssignmentRequest("PAYJOY", "metadata.amount"),
+                new TransferInstructionAssignmentRequest("FINAMCO", "metadata.reserve"))));
 
         var config = captureSavedPayload().transferInstructions();
-        assertThat(config.ownerTemplateCodes()).containsExactly("PAYJOY", "FINAMCO");
+        assertThat(config.assignments()).extracting("ownerTemplateCode", "namespace").containsExactly(
+                org.assertj.core.groups.Tuple.tuple("PAYJOY", "metadata.amount"),
+                org.assertj.core.groups.Tuple.tuple("FINAMCO", "metadata.reserve"));
+    }
+
+    @Test
+    void execute_missingNamespace_throwsInvalidDistributionConfigException() {
+        mockExisting();
+
+        var request = new UpdateTransferInstructionsRequest(List.of(
+                new TransferInstructionAssignmentRequest("PAYJOY", null)));
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_blankNamespace_throwsInvalidDistributionConfigException() {
+        mockExisting();
+
+        var request = new UpdateTransferInstructionsRequest(List.of(
+                new TransferInstructionAssignmentRequest("PAYJOY", "   ")));
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
     }
 
     @Test
     void execute_duplicateOwnerTemplateCode_throwsInvalidDistributionConfigException() {
         mockExisting();
 
-        var request = new UpdateTransferInstructionsRequest(List.of("PAYJOY", "PAYJOY"));
+        var request = new UpdateTransferInstructionsRequest(List.of(
+                new TransferInstructionAssignmentRequest("PAYJOY", "metadata.amount"),
+                new TransferInstructionAssignmentRequest("PAYJOY", "metadata.reserve")));
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_repeatedNamespaceAcrossAssignments_persistsWithoutConflict() {
+        mockExisting();
+
+        useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of(
+                new TransferInstructionAssignmentRequest("PAYJOY", "metadata.amount"),
+                new TransferInstructionAssignmentRequest("FINAMCO", "metadata.amount"))));
+
+        var config = captureSavedPayload().transferInstructions();
+        assertThat(config.assignments()).hasSize(2);
+        assertThat(config.assignments()).allSatisfy(a -> assertThat(a.namespace()).isEqualTo("metadata.amount"));
     }
 
     @Test
@@ -83,7 +125,7 @@ class UpdateTransferInstructionsUseCaseTest {
         useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of()));
 
         var config = captureSavedPayload().transferInstructions();
-        assertThat(config.ownerTemplateCodes()).isEmpty();
+        assertThat(config.assignments()).isEmpty();
     }
 
     @Test
@@ -93,14 +135,15 @@ class UpdateTransferInstructionsUseCaseTest {
         useCase.execute("id-1", new UpdateTransferInstructionsRequest(null));
 
         var config = captureSavedPayload().transferInstructions();
-        assertThat(config.ownerTemplateCodes()).isEmpty();
+        assertThat(config.assignments()).isEmpty();
     }
 
     @Test
     void execute_updatesTransferInstructions_preservesRestOfPayload() {
         mockExisting();
 
-        useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of("PAYJOY")));
+        useCase.execute("id-1", new UpdateTransferInstructionsRequest(List.of(
+                new TransferInstructionAssignmentRequest("PAYJOY", "metadata.amount"))));
 
         var payload = captureSavedPayload();
         assertThat(payload.country()).isEqualTo("Colombia (COL)");
