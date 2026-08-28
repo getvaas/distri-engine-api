@@ -3,11 +3,14 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
+import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStrategy;
+import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import org.junit.jupiter.api.Test;
@@ -17,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -63,10 +67,10 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_rulesForAll4Components_persistsAsIs() {
         mockExisting(EMPTY_PAYLOAD);
         var request = new UpdateDistributionRulesRequest(List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null),
-                new ComponentOwnerRuleRequest(PaymentComponent.INTEREST, "funder", null),
-                new ComponentOwnerRuleRequest(PaymentComponent.LATE_FEE, "servicer", "late fees go to servicer"),
-                new ComponentOwnerRuleRequest(PaymentComponent.GUARANTEE, "guarantee_fund", null)));
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null),
+                new ComponentOwnerRuleRequest(PaymentComponent.INTEREST, "funder", null, null),
+                new ComponentOwnerRuleRequest(PaymentComponent.LATE_FEE, "servicer", "late fees go to servicer", null),
+                new ComponentOwnerRuleRequest(PaymentComponent.GUARANTEE, "guarantee_fund", null, null)));
 
         useCase.execute("id-1", request);
 
@@ -80,7 +84,7 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_ruleWithoutComponent_throwsInvalidDistributionConfigException() {
         mockExisting(EMPTY_PAYLOAD);
         var request = new UpdateDistributionRulesRequest(List.of(
-                new ComponentOwnerRuleRequest(null, "funder", null)));
+                new ComponentOwnerRuleRequest(null, "funder", null, null)));
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -90,7 +94,7 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_ruleWithoutOwner_throwsInvalidDistributionConfigException() {
         mockExisting(EMPTY_PAYLOAD);
         var request = new UpdateDistributionRulesRequest(List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, null, null)));
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, null, null, null)));
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -100,8 +104,8 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_duplicateComponent_throwsInvalidDistributionConfigException() {
         mockExisting(EMPTY_PAYLOAD);
         var request = new UpdateDistributionRulesRequest(List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null),
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "servicer", null)));
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null),
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "servicer", null, null)));
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -130,5 +134,66 @@ class UpdateDistributionRulesUseCaseTest {
         verify(mapper).serializeConfig(captor.capture());
         assertThat(captor.getValue().country()).isEqualTo("Colombia (COL)");
         assertThat(captor.getValue().currency()).isEqualTo("COP");
+    }
+
+    @Test
+    void execute_ruleWithBalanceStrategy_persists() {
+        mockExisting(EMPTY_PAYLOAD);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.PERCENTAGE_OF_POOL,
+                new BigDecimal("25.5"));
+        var request = new UpdateDistributionRulesRequest(List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy();
+        assertThat(saved.amountField()).isEqualTo("net_amount");
+        assertThat(saved.sufficiencyStrategy()).isEqualTo(BalanceSufficiencyStrategy.UNTIL_EXHAUSTED);
+        assertThat(saved.distributionStrategy()).isEqualTo(AmountDistributionStrategy.PERCENTAGE_OF_POOL);
+        assertThat(saved.distributionValue()).isEqualByComparingTo("25.5");
+    }
+
+    @Test
+    void execute_ruleWithoutBalanceStrategy_persistsAsNull() {
+        mockExisting(EMPTY_PAYLOAD);
+        var request = new UpdateDistributionRulesRequest(List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy();
+        assertThat(saved).isNull();
+    }
+
+    @Test
+    void execute_fixedAmountWithoutDistributionValue_persistsWithoutError() {
+        mockExisting(EMPTY_PAYLOAD);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.IGNORE_BALANCE, AmountDistributionStrategy.FIXED_AMOUNT, null);
+        var request = new UpdateDistributionRulesRequest(List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy();
+        assertThat(saved.distributionStrategy()).isEqualTo(AmountDistributionStrategy.FIXED_AMOUNT);
+        assertThat(saved.distributionValue()).isNull();
+    }
+
+    @Test
+    void execute_defaultWithDistributionValueSet_persistsAsIs() {
+        mockExisting(EMPTY_PAYLOAD);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.SUFFICIENT_OR_STOP, AmountDistributionStrategy.DEFAULT,
+                new BigDecimal("100"));
+        var request = new UpdateDistributionRulesRequest(List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy();
+        assertThat(saved.distributionStrategy()).isEqualTo(AmountDistributionStrategy.DEFAULT);
+        assertThat(saved.distributionValue()).isEqualByComparingTo("100");
     }
 }

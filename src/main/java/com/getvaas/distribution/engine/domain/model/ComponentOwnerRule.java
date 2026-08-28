@@ -12,9 +12,13 @@ import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
  * ({@code current_principal}, {@code current_interest}, {@code moratory_interest},
  * {@code current_guarantee}) — hoy no existe ningún split real por componente en producción, solo
  * una resta escalar única de {@code currentGuarantee} sobre {@code netAmount}.
+ * <p>
+ * {@code balanceStrategy} (VPR-9703) es opcional — no todas las reglas necesitan tener la
+ * estrategia de balance definida todavía.
  */
 public record ComponentOwnerRule(
         PaymentComponent component,
         String owner,
-        String description
+        String description,
+        BalanceStrategyConfig balanceStrategy
 ) {}

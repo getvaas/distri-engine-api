@@ -1,11 +1,13 @@
 package com.getvaas.distribution.engine.application.usecase;
 
+import com.getvaas.distribution.engine.domain.model.BalanceStrategyConfig;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import lombok.RequiredArgsConstructor;
@@ -79,6 +81,15 @@ public class UpdateDistributionRulesUseCase {
                     "el componente " + ruleRequest.component() + " está repetido en 'componentOwners'");
         }
 
-        return new ComponentOwnerRule(ruleRequest.component(), ruleRequest.owner(), ruleRequest.description());
+        return new ComponentOwnerRule(ruleRequest.component(), ruleRequest.owner(), ruleRequest.description(),
+                buildBalanceStrategyConfig(ruleRequest.balanceStrategy()));
+    }
+
+    private BalanceStrategyConfig buildBalanceStrategyConfig(BalanceStrategyConfigRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return new BalanceStrategyConfig(request.amountField(), request.sufficiencyStrategy(),
+                request.distributionStrategy(), request.distributionValue());
     }
 }

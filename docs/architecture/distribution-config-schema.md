@@ -27,7 +27,7 @@ de ejecución completo.
 | Pool Strategy | `pool` → `PoolConfig` | ✅ Tipado (parcial — ver abajo) | VPR-9628, VPR-9629, VPR-9630 |
 | Payment Filters | `paymentFilters` → `PaymentFiltersConfig` | ✅ Tipado (completo) | VPR-9631, VPR-9632, VPR-9633, VPR-9634 |
 | Virtual Columns | `virtualColumns` → `JsonNode` | ⏳ Placeholder | sin ticket de estructura aún |
-| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643 |
+| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9703 |
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
@@ -58,9 +58,26 @@ PaymentFiltersConfig
 ### Distribution Rules (`rules`)
 ```
 DistributionRulesConfig
-└── componentOwners: [{component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE, owner, description}]
+└── componentOwners: [ComponentOwnerRule]
+    ├── component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE
+    ├── owner: String
+    ├── description: String, opcional
+    └── balanceStrategy: BalanceStrategyConfig, opcional                — VPR-9703
+        ├── amountField: String (columna libre de payment_tape, mismo patrón que
+        │                 PaymentTapePoolConfig.amountField de VPR-9628)
+        ├── sufficiencyStrategy: BalanceSufficiencyStrategy
+        │       (SUFFICIENT_OR_STOP | UNTIL_EXHAUSTED | SKIP_IF_INSUFFICIENT | IGNORE_BALANCE)
+        ├── distributionStrategy: AmountDistributionStrategy
+        │       (DEFAULT | PROPORTIONAL_WEIGHT | PERCENTAGE_OF_POOL | PERCENTAGE_OF_REMAINING | FIXED_AMOUNT)
+        └── distributionValue: BigDecimal, opcional (peso/porcentaje/monto fijo según
+                    distributionStrategy; null cuando distributionStrategy=DEFAULT)
 ```
-Scope mínimo (VPR-9643). Explícitamente pendientes, sin resolver todavía: fees/deducciones,
+Scope mínimo (VPR-9643). `balanceStrategy` vive por regla (owner+componente), no global al deal,
+porque cada owner puede necesitar una estrategia distinta — sin validación cruzada entre
+`distributionStrategy` y `distributionValue` al guardar (mismo criterio que el resto del proyecto:
+se permiten drafts parciales/inconsistentes). El cálculo real del monto y la resolución del
+balance en tiempo de ejecución son responsabilidad de la etapa de ejecución (Pista B), fuera de
+alcance de este repo. Explícitamente pendientes, sin resolver todavía: fees/deducciones,
 multi-moneda por regla, remanente/cascada, impuestos y seguros (no tienen columna propia hoy).
 
 ### Ownership (`ownership`)
