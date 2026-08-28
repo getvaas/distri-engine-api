@@ -1,7 +1,7 @@
 **Created at**: 2026-08-28
-**Status**: In Progress
+**Status**: Done
 **Original input**: @https://pmvaas1.atlassian.net/browse/VPR-9705
-**Plan implemented**: —
+**Plan implemented**: @specs/20260828-165853_distribution-rules-remaining-balance-vpr-9705/plan.md
 
 # Story: Definir destino del remanente tras aplicar todas las reglas de distribución
 
@@ -12,11 +12,11 @@ declarar, opcionalmente, a qué componente de cuota se atribuye ese remanente y 
 destino se transfiere.
 
 ### Acceptance Criteria
-- [ ] **Given** `remainingBalance` con `component` y `destinationAccountId` completos, **When** se
+- [x] **Given** `remainingBalance` con `component` y `destinationAccountId` completos, **When** se
   guarda la config, **Then** persiste tal cual.
-- [ ] **Given** `remainingBalance` no enviado (null), **When** se guarda, **Then** persiste sin
+- [x] **Given** `remainingBalance` no enviado (null), **When** se guarda, **Then** persiste sin
   error — es opcional, no todo deal necesita definir qué pasa con el remanente.
-- [ ] **Given** `remainingBalance` con solo uno de los dos campos (`component` o
+- [x] **Given** `remainingBalance` con solo uno de los dos campos (`component` o
   `destinationAccountId`), **When** se guarda, **Then** persiste sin error — sin validación
   cruzada entre ambos campos.
 

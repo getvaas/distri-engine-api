@@ -1,5 +1,5 @@
 **Created at**: 2026-08-28
-**Status**: Approved
+**Status**: Done
 **Based on story**: @specs/20260828-165853_distribution-rules-remaining-balance-vpr-9705/story.md
 
 # Plan: Definir destino del remanente tras aplicar todas las reglas de distribución
@@ -35,20 +35,20 @@ una vez aplicadas todas las reglas anteriores de la cascada.
 ### Phases
 
 #### Phase 1: Modelo + DTO
-- [ ] `RemainingBalanceConfig` (domain, nuevo)
-- [ ] `DistributionRulesConfig` gana `remainingBalance: RemainingBalanceConfig`
-- [ ] `RemainingBalanceConfigRequest` (DTO, nuevo)
-- [ ] `UpdateDistributionRulesRequest` gana `remainingBalance: RemainingBalanceConfigRequest`
+- [x] `RemainingBalanceConfig` (domain, nuevo)
+- [x] `DistributionRulesConfig` gana `remainingBalance: RemainingBalanceConfig`
+- [x] `RemainingBalanceConfigRequest` (DTO, nuevo)
+- [x] `UpdateDistributionRulesRequest` gana `remainingBalance: RemainingBalanceConfigRequest`
 
 #### Phase 2: Use case
-- [ ] `buildDistributionRulesConfig` mapea `remainingBalance` (null-safe: `null` si no viene)
-- [ ] Sin validación cruzada entre `component` y `destinationAccountId`
+- [x] `buildDistributionRulesConfig` mapea `remainingBalance` (null-safe: `null` si no viene)
+- [x] Sin validación cruzada entre `component` y `destinationAccountId`
 
 #### Phase 3: Tests + Docs
-- [ ] `execute_remainingBalanceWithAllFields_persists`
-- [ ] `execute_remainingBalanceNotSent_persistsAsNull`
-- [ ] `execute_remainingBalanceWithOnlyOneField_persistsWithoutError`
-- [ ] `docs/architecture/distribution-config-schema.md` — sección "Distribution Rules" actualizada
+- [x] `execute_remainingBalanceWithAllFields_persists`
+- [x] `execute_remainingBalanceNotSent_persistsAsNull`
+- [x] `execute_remainingBalanceWithOnlyOneField_persistsWithoutError`
+- [x] `docs/architecture/distribution-config-schema.md` — sección "Distribution Rules" actualizada
       con `remainingBalance`
 
 ### Next Step
