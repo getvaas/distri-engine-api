@@ -5,6 +5,7 @@ import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStra
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Estrategia de balance de una {@link ComponentOwnerRule} (VPR-9703) — cómo mover el balance de
@@ -17,11 +18,16 @@ import java.math.BigDecimal;
  * {@code distributionStrategy=DEFAULT}. No hay validación cruzada entre ambos campos: el cálculo
  * real y su resolución en tiempo de distribución son responsabilidad de la etapa de ejecución
  * (Pista B), fuera de alcance de este repo.
+ * <p>
+ * {@code accountTransferRules} (VPR-9702) declara desde/hacia qué cuentas se mueve el balance,
+ * con una condición opcional por regla — puede haber varias combinaciones distintas bajo la
+ * misma balance strategy.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BalanceStrategyConfig(
         String amountField,
         BalanceSufficiencyStrategy sufficiencyStrategy,
         AmountDistributionStrategy distributionStrategy,
-        BigDecimal distributionValue
+        BigDecimal distributionValue,
+        List<AccountTransferRule> accountTransferRules
 ) {}

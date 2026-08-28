@@ -7,11 +7,14 @@ import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStra
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
+import com.getvaas.distribution.engine.domain.model.enums.PaymentFilterOperator;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -142,7 +145,7 @@ class UpdateDistributionRulesUseCaseTest {
         mockExisting(EMPTY_PAYLOAD);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.PERCENTAGE_OF_POOL,
-                new BigDecimal("25.5"));
+                new BigDecimal("25.5"), null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
 
@@ -171,7 +174,7 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_fixedAmountWithoutDistributionValue_persistsWithoutError() {
         mockExisting(EMPTY_PAYLOAD);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.IGNORE_BALANCE, AmountDistributionStrategy.FIXED_AMOUNT, null);
+                BalanceSufficiencyStrategy.IGNORE_BALANCE, AmountDistributionStrategy.FIXED_AMOUNT, null, null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
 
@@ -187,7 +190,7 @@ class UpdateDistributionRulesUseCaseTest {
         mockExisting(EMPTY_PAYLOAD);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 BalanceSufficiencyStrategy.SUFFICIENT_OR_STOP, AmountDistributionStrategy.DEFAULT,
-                new BigDecimal("100"));
+                new BigDecimal("100"), null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
 
@@ -244,5 +247,73 @@ class UpdateDistributionRulesUseCaseTest {
 
         var saved = captureSavedRules();
         assertThat(saved.hasComponentOwners()).isFalse();
+    }
+
+    @Test
+    void execute_accountTransferRuleWithCondition_persists() {
+        mockExisting(EMPTY_PAYLOAD);
+        var condition = new PaymentFilterConditionRequest("contract_id", PaymentFilterOperator.EQ, "123");
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L, 2L), List.of(3L), condition);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
+        assertThat(saved.fromAccountIds()).containsExactly(1L, 2L);
+        assertThat(saved.toAccountIds()).containsExactly(3L);
+        assertThat(saved.condition().field()).isEqualTo("contract_id");
+        assertThat(saved.condition().operator()).isEqualTo(PaymentFilterOperator.EQ);
+        assertThat(saved.condition().value()).isEqualTo("123");
+    }
+
+    @Test
+    void execute_accountTransferRuleWithoutCondition_persistsAsNull() {
+        mockExisting(EMPTY_PAYLOAD);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
+        assertThat(saved.condition()).isNull();
+    }
+
+    @Test
+    void execute_emptyOrMissingAccountTransferRules_persistsEmptyList() {
+        mockExisting(EMPTY_PAYLOAD);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT, null, null);
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy();
+        assertThat(saved.accountTransferRules()).isEmpty();
+    }
+
+    @Test
+    void execute_sameAccountIdInFromAndTo_persistsWithoutError() {
+        mockExisting(EMPTY_PAYLOAD);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(1L), null);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
+        assertThat(saved.fromAccountIds()).containsExactly(1L);
+        assertThat(saved.toAccountIds()).containsExactly(1L);
     }
 }

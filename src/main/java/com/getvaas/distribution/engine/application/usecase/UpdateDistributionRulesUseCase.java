@@ -1,14 +1,18 @@
 package com.getvaas.distribution.engine.application.usecase;
 
+import com.getvaas.distribution.engine.domain.model.AccountTransferRule;
 import com.getvaas.distribution.engine.domain.model.BalanceStrategyConfig;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
+import com.getvaas.distribution.engine.domain.model.PaymentFilterCondition;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -92,6 +96,23 @@ public class UpdateDistributionRulesUseCase {
             return null;
         }
         return new BalanceStrategyConfig(request.amountField(), request.sufficiencyStrategy(),
-                request.distributionStrategy(), request.distributionValue());
+                request.distributionStrategy(), request.distributionValue(),
+                buildAccountTransferRules(request.accountTransferRules()));
+    }
+
+    private List<AccountTransferRule> buildAccountTransferRules(List<AccountTransferRuleRequest> ruleRequests) {
+        if (ruleRequests == null || ruleRequests.isEmpty()) {
+            return List.of();
+        }
+        return ruleRequests.stream()
+                .map(r -> new AccountTransferRule(r.fromAccountIds(), r.toAccountIds(), buildCondition(r.condition())))
+                .toList();
+    }
+
+    private PaymentFilterCondition buildCondition(PaymentFilterConditionRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return new PaymentFilterCondition(request.field(), request.operator(), request.value());
     }
 }
