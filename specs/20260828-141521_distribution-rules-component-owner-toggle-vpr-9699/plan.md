@@ -1,5 +1,5 @@
 **Created at**: 2026-08-28
-**Status**: Approved
+**Status**: Done
 **Based on story**: @specs/20260828-141521_distribution-rules-component-owner-toggle-vpr-9699/story.md
 
 # Plan: Habilitar o deshabilitar la asignación de owner por componente de cuota
@@ -36,23 +36,23 @@ con `componentOwners` al guardar.
 ### Phases
 
 #### Phase 1: Modelo + DTO
-- [ ] `DistributionRulesConfig` gana `hasComponentOwners: boolean` (primer parámetro)
-- [ ] `UpdateDistributionRulesRequest` gana `hasComponentOwners: Boolean`
+- [x] `DistributionRulesConfig` gana `hasComponentOwners: boolean` (primer parámetro)
+- [x] `UpdateDistributionRulesRequest` gana `hasComponentOwners: Boolean`
 
 #### Phase 2: Use case
-- [ ] `UpdateDistributionRulesUseCase.buildDistributionRulesConfig` pasa `hasComponentOwners` al
+- [x] `UpdateDistributionRulesUseCase.buildDistributionRulesConfig` pasa `hasComponentOwners` al
       construir `DistributionRulesConfig`
-- [ ] `hasComponentOwners` no enviado (`null`) → `false` por default
-- [ ] Sin validación cruzada con `componentOwners` — cualquier combinación se persiste tal cual
-- [ ] Validaciones existentes de `ComponentOwnerRule` (component/owner obligatorios, sin
+- [x] `hasComponentOwners` no enviado (`null`) → `false` por default
+- [x] Sin validación cruzada con `componentOwners` — cualquier combinación se persiste tal cual
+- [x] Validaciones existentes de `ComponentOwnerRule` (component/owner obligatorios, sin
       duplicados) sin cambios
 
 #### Phase 3: Tests + Docs
-- [ ] `execute_hasComponentOwnersTrue_persists`
-- [ ] `execute_hasComponentOwnersFalseWithEmptyList_persists`
-- [ ] `execute_hasComponentOwnersFalseWithData_persistsWithoutError`
-- [ ] `execute_hasComponentOwnersNotSent_defaultsToFalse`
-- [ ] `docs/architecture/distribution-config-schema.md` — sección "Distribution Rules" actualizada
+- [x] `execute_hasComponentOwnersTrue_persists`
+- [x] `execute_hasComponentOwnersFalseWithEmptyList_persists`
+- [x] `execute_hasComponentOwnersFalseWithData_persistsWithoutError`
+- [x] `execute_hasComponentOwnersNotSent_defaultsToFalse`
+- [x] `docs/architecture/distribution-config-schema.md` — sección "Distribution Rules" actualizada
       con `hasComponentOwners`
 
 ### Next Step

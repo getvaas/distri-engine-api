@@ -1,7 +1,7 @@
 **Created at**: 2026-08-28
-**Status**: In Progress
+**Status**: Done
 **Original input**: @https://pmvaas1.atlassian.net/browse/VPR-9699
-**Plan implemented**: —
+**Plan implemented**: @specs/20260828-141521_distribution-rules-component-owner-toggle-vpr-9699/plan.md
 
 # Story: Habilitar o deshabilitar la asignación de owner por componente de cuota
 
@@ -12,15 +12,15 @@ deal no usa esta funcionalidad" — solo se infiere de que la lista esté vacía
 poder declarar explícitamente si activa o no la asignación de owner por componente.
 
 ### Acceptance Criteria
-- [ ] **Given** `hasComponentOwners=true` con una o más reglas en `componentOwners`, **When** se
+- [x] **Given** `hasComponentOwners=true` con una o más reglas en `componentOwners`, **When** se
   guarda la config, **Then** persiste tal cual.
-- [ ] **Given** `hasComponentOwners=false`, **When** se guarda la config (sin importar si
+- [x] **Given** `hasComponentOwners=false`, **When** se guarda la config (sin importar si
   `componentOwners` viene vacía o con datos), **Then** persiste sin error — se permiten cargas
   parciales/inconsistentes mientras la config esté en `DRAFT`, mismo criterio que el resto del
   proyecto.
-- [ ] **Given** una regla sin `component` o sin `owner`, **When** se intenta guardar, **Then** se
+- [x] **Given** una regla sin `component` o sin `owner`, **When** se intenta guardar, **Then** se
   rechaza — validación ya existente de VPR-9643, sin cambios.
-- [ ] **Given** dos reglas con el mismo `component`, **When** se intenta guardar, **Then** se
+- [x] **Given** dos reglas con el mismo `component`, **When** se intenta guardar, **Then** se
   rechaza — validación ya existente de VPR-9643, sin cambios.
 
 ### Additional Context
