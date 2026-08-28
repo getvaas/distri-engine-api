@@ -5,5 +5,6 @@ import java.util.List;
 public record AccountTransferRuleRequest(
         List<Long> fromAccountIds,
         List<Long> toAccountIds,
-        PaymentFilterConditionRequest condition
+        PaymentFilterConditionRequest condition,
+        List<DeductionRequest> deductions
 ) {}

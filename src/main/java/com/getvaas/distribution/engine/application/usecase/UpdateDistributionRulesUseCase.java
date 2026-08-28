@@ -3,6 +3,7 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.AccountTransferRule;
 import com.getvaas.distribution.engine.domain.model.BalanceStrategyConfig;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
+import com.getvaas.distribution.engine.domain.model.Deduction;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
@@ -12,6 +13,7 @@ import com.getvaas.distribution.engine.infrastructure.persistence.payments.Distr
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.DeductionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import lombok.RequiredArgsConstructor;
@@ -105,7 +107,8 @@ public class UpdateDistributionRulesUseCase {
             return List.of();
         }
         return ruleRequests.stream()
-                .map(r -> new AccountTransferRule(r.fromAccountIds(), r.toAccountIds(), buildCondition(r.condition())))
+                .map(r -> new AccountTransferRule(r.fromAccountIds(), r.toAccountIds(), buildCondition(r.condition()),
+                        buildDeductions(r.deductions())))
                 .toList();
     }
 
@@ -114,5 +117,14 @@ public class UpdateDistributionRulesUseCase {
             return null;
         }
         return new PaymentFilterCondition(request.field(), request.operator(), request.value());
+    }
+
+    private List<Deduction> buildDeductions(List<DeductionRequest> deductionRequests) {
+        if (deductionRequests == null || deductionRequests.isEmpty()) {
+            return List.of();
+        }
+        return deductionRequests.stream()
+                .map(d -> new Deduction(d.concept(), d.type(), d.value(), d.accountId(), d.periodicity()))
+                .toList();
     }
 }

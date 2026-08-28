@@ -6,6 +6,8 @@ import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
+import com.getvaas.distribution.engine.domain.model.enums.DeductionPeriodicity;
+import com.getvaas.distribution.engine.domain.model.enums.DeductionType;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentFilterOperator;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
@@ -14,6 +16,7 @@ import com.getvaas.distribution.engine.infrastructure.persistence.payments.entit
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.DeductionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import org.junit.jupiter.api.Test;
@@ -253,7 +256,7 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_accountTransferRuleWithCondition_persists() {
         mockExisting(EMPTY_PAYLOAD);
         var condition = new PaymentFilterConditionRequest("contract_id", PaymentFilterOperator.EQ, "123");
-        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L, 2L), List.of(3L), condition);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L, 2L), List.of(3L), condition, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
@@ -273,7 +276,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_accountTransferRuleWithoutCondition_persistsAsNull() {
         mockExisting(EMPTY_PAYLOAD);
-        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
@@ -303,7 +306,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_sameAccountIdInFromAndTo_persistsWithoutError() {
         mockExisting(EMPTY_PAYLOAD);
-        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(1L), null);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(1L), null, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
@@ -315,5 +318,85 @@ class UpdateDistributionRulesUseCaseTest {
         var saved = captureSavedRules().componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
         assertThat(saved.fromAccountIds()).containsExactly(1L);
         assertThat(saved.toAccountIds()).containsExactly(1L);
+    }
+
+    @Test
+    void execute_deductionWithAllFields_persists() {
+        mockExisting(EMPTY_PAYLOAD);
+        var deduction = new DeductionRequest("servicing_fee", DeductionType.PERCENTAGE,
+                new BigDecimal("2.5"), 9L, DeductionPeriodicity.ONCE_PER_DISTRIBUTION);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, List.of(deduction));
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy()
+                .accountTransferRules().get(0).deductions().get(0);
+        assertThat(saved.concept()).isEqualTo("servicing_fee");
+        assertThat(saved.type()).isEqualTo(DeductionType.PERCENTAGE);
+        assertThat(saved.value()).isEqualByComparingTo("2.5");
+        assertThat(saved.accountId()).isEqualTo(9L);
+        assertThat(saved.periodicity()).isEqualTo(DeductionPeriodicity.ONCE_PER_DISTRIBUTION);
+    }
+
+    @Test
+    void execute_deductionWithNullAccountId_persistsAsIs() {
+        mockExisting(EMPTY_PAYLOAD);
+        var deduction = new DeductionRequest("origination_fee", DeductionType.FIXED,
+                new BigDecimal("50"), null, DeductionPeriodicity.ALWAYS);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, List.of(deduction));
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy()
+                .accountTransferRules().get(0).deductions().get(0);
+        assertThat(saved.accountId()).isNull();
+    }
+
+    @Test
+    void execute_emptyOrMissingDeductions_persistsEmptyList() {
+        mockExisting(EMPTY_PAYLOAD);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, null);
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
+        assertThat(saved.deductions()).isEmpty();
+    }
+
+    @Test
+    void execute_multipleDeductions_persistsAll() {
+        mockExisting(EMPTY_PAYLOAD);
+        var deduction1 = new DeductionRequest("servicing_fee", DeductionType.FIXED,
+                new BigDecimal("10"), null, DeductionPeriodicity.ONCE_PER_MONTH);
+        var deduction2 = new DeductionRequest("origination_fee", DeductionType.PERCENTAGE,
+                new BigDecimal("1.5"), 9L, DeductionPeriodicity.ONCE_PER_WEEK);
+        var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null,
+                List.of(deduction1, deduction2));
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                null, List.of(accountTransferRule));
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules().componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
+        assertThat(saved.deductions()).hasSize(2);
+        assertThat(saved.deductions().get(1).concept()).isEqualTo("origination_fee");
     }
 }
