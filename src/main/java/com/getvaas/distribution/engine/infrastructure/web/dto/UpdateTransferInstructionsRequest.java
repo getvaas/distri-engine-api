@@ -3,5 +3,5 @@ package com.getvaas.distribution.engine.infrastructure.web.dto;
 import java.util.List;
 
 public record UpdateTransferInstructionsRequest(
-        List<String> ownerTemplateCodes
+        List<TransferInstructionAssignmentRequest> assignments
 ) {}

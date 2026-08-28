@@ -2,9 +2,11 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
+import com.getvaas.distribution.engine.domain.model.TransferInstructionAssignment;
 import com.getvaas.distribution.engine.domain.model.TransferInstructionsConfig;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.web.dto.TransferInstructionAssignmentRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateTransferInstructionsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,9 +16,9 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * Configura la etapa Transfer Instructions — qué ownerTemplateCode están asignados a este deal
- * (VPR-9713). Es una referencia liviana a owner_dictionary.json (S3, externo) — el resto de los
- * datos del owner no se duplica acá.
+ * Configura la etapa Transfer Instructions — qué owners están asignados a qué plantilla, con su
+ * namespace de metadata (VPR-9713, VPR-9714). Cada assignment es una referencia liviana a
+ * owner_dictionary.json (S3, externo) — el resto de los datos del owner no se duplica acá.
  */
 @Component
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class UpdateTransferInstructionsUseCase {
                 .orElseThrow(() -> new DistributionConfigNotFoundException(id));
         var existing = mapper.toDomain(entity);
 
-        var transferInstructions = buildTransferInstructionsConfig(request.ownerTemplateCodes());
+        var transferInstructions = buildTransferInstructionsConfig(request.assignments());
 
         var updatedPayload = new DistributionConfigPayload(
                 existing.config().country(),
@@ -52,19 +54,29 @@ public class UpdateTransferInstructionsUseCase {
         return mapper.toDomain(saved);
     }
 
-    private TransferInstructionsConfig buildTransferInstructionsConfig(List<String> ownerTemplateCodes) {
-        if (ownerTemplateCodes == null || ownerTemplateCodes.isEmpty()) {
+    private TransferInstructionsConfig buildTransferInstructionsConfig(List<TransferInstructionAssignmentRequest> assignmentRequests) {
+        if (assignmentRequests == null || assignmentRequests.isEmpty()) {
             return new TransferInstructionsConfig(List.of());
         }
 
         var seenCodes = new HashSet<String>();
-        for (var code : ownerTemplateCodes) {
-            if (!seenCodes.add(code)) {
-                throw new InvalidDistributionConfigException(
-                        "el ownerTemplateCode " + code + " está repetido en 'ownerTemplateCodes'");
-            }
+        var assignments = assignmentRequests.stream()
+                .map(r -> buildAssignment(r, seenCodes))
+                .toList();
+
+        return new TransferInstructionsConfig(assignments);
+    }
+
+    private TransferInstructionAssignment buildAssignment(TransferInstructionAssignmentRequest request, HashSet<String> seenCodes) {
+        if (request.namespace() == null || request.namespace().isBlank()) {
+            throw new InvalidDistributionConfigException(
+                    "cada assignment requiere 'namespace'");
+        }
+        if (!seenCodes.add(request.ownerTemplateCode())) {
+            throw new InvalidDistributionConfigException(
+                    "el ownerTemplateCode " + request.ownerTemplateCode() + " está repetido en 'assignments'");
         }
 
-        return new TransferInstructionsConfig(ownerTemplateCodes);
+        return new TransferInstructionAssignment(request.ownerTemplateCode(), request.namespace());
     }
 }

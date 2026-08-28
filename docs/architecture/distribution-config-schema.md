@@ -31,7 +31,7 @@ de ejecución completo.
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
-| Transfer Instructions | `transferInstructions` → `TransferInstructionsConfig` | ✅ Tipado (scope mínimo) | VPR-9713 |
+| Transfer Instructions | `transferInstructions` → `TransferInstructionsConfig` | ✅ Tipado (scope mínimo) | VPR-9713, VPR-9714 |
 
 ## Detalle de los nodos ya tipados
 
@@ -127,21 +127,29 @@ notifications-api, no es una decisión de negocio nuestra.
 ### Transfer Instructions (`transferInstructions`)
 ```
 TransferInstructionsConfig
-└── ownerTemplateCodes: [String]                                       — VPR-9713
+└── assignments: [TransferInstructionAssignment]
+    ├── ownerTemplateCode: String                                      — VPR-9713
+    └── namespace: String                                              — VPR-9714 (obligatorio)
 ```
-Referencia liviana a `owner_dictionary.json` (S3, externo, variable de entorno de infraestructura
-global) — el resto de los datos del owner (`owner_company_id`, `from_account_id`, `to_account_id`,
-`reserve_amount`, `balance_rule`) sigue viviendo únicamente en ese diccionario, nunca copiado acá.
-No se agrega `ownerCompanyId` por deal: es redundante con `companyId`, que ya vive en la raíz de
-`DistributionConfig` (una distribución siempre es de una company particular). Tampoco se agrega
-`masterServicerId`: ya es implícito vía `masterTrustId` en la raíz.
+Cada assignment es una referencia liviana a `owner_dictionary.json` (S3, externo, variable de
+entorno de infraestructura global) — el resto de los datos del owner (`owner_company_id`,
+`from_account_id`, `to_account_id`, `reserve_amount`, `balance_rule`) sigue viviendo únicamente en
+ese diccionario, nunca copiado acá. No se agrega `ownerCompanyId` por deal: es redundante con
+`companyId`, que ya vive en la raíz de `DistributionConfig` (una distribución siempre es de una
+company particular). Tampoco se agrega `masterServicerId`: ya es implícito vía `masterTrustId` en
+la raíz.
+
+`namespace` (ej. `metadata.amount`) se concatena con `ownerTemplateCode` en tiempo de distribución
+para resolver metadata puntual de la instrucción — esa concatenación es responsabilidad de la
+etapa de ejecución (Pista B), esta config solo tipa y persiste el string. No tiene un catálogo
+cerrado de valores válidos ni restricción de unicidad — varios assignments pueden compartir el
+mismo `namespace`.
 
 La unicidad de `ownerTemplateCode` es **por registro** (mismo `distribution_engine_config`), no
 global — el mismo código puede repetirse entre distintos deals sin conflicto.
 
-Relacionado, explícitamente fuera de alcance: VPR-9714 agrega un campo `namespace` por assignment
-para matching de metadata; VPR-9715 es alta de documentos y guarda su `templateId`, no toca esta
-lista.
+Relacionado, explícitamente fuera de alcance: VPR-9715 es alta de documentos y guarda su
+`templateId`, no toca esta lista.
 
 ## Endpoints por nodo
 
