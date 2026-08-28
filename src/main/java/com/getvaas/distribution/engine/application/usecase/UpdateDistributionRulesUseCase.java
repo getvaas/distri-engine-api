@@ -102,7 +102,8 @@ public class UpdateDistributionRulesUseCase {
         }
 
         return new ComponentOwnerRule(ruleRequest.component(), ruleRequest.owner(), ruleRequest.description(),
-                buildBalanceStrategyConfig(ruleRequest.balanceStrategy()));
+                buildBalanceStrategyConfig(ruleRequest.balanceStrategy()),
+                Boolean.TRUE.equals(ruleRequest.distributeAccountingPayments()));
     }
 
     private BalanceStrategyConfig buildBalanceStrategyConfig(BalanceStrategyConfigRequest request) {

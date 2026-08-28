@@ -15,10 +15,16 @@ import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
  * <p>
  * {@code balanceStrategy} (VPR-9703) es opcional — no todas las reglas necesitan tener la
  * estrategia de balance definida todavía.
+ * <p>
+ * {@code distributeAccountingPayments} (VPR-9706) es un override independiente por componente,
+ * sin relación forzada con el flag equivalente a nivel deal
+ * ({@code AccountingPaymentsConfig.distributeAccountingPayments}, VPR-9631) — comparten nombre
+ * por describir el mismo concepto de negocio, pero se evalúan por separado en ejecución.
  */
 public record ComponentOwnerRule(
         PaymentComponent component,
         String owner,
         String description,
-        BalanceStrategyConfig balanceStrategy
+        BalanceStrategyConfig balanceStrategy,
+        boolean distributeAccountingPayments
 ) {}
