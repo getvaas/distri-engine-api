@@ -27,7 +27,7 @@ de ejecución completo.
 | Pool Strategy | `pool` → `PoolConfig` | ✅ Tipado (parcial — ver abajo) | VPR-9628, VPR-9629, VPR-9630 |
 | Payment Filters | `paymentFilters` → `PaymentFiltersConfig` | ✅ Tipado (completo) | VPR-9631, VPR-9632, VPR-9633, VPR-9634 |
 | Virtual Columns | `virtualColumns` → `JsonNode` | ⏳ Placeholder | sin ticket de estructura aún |
-| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643 |
+| Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699 |
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
 | Notifications | `notifications` → `NotificationsConfig` | ✅ Tipado (`body` excluido, bloqueado) | VPR-9639, VPR-9640 |
@@ -58,10 +58,15 @@ PaymentFiltersConfig
 ### Distribution Rules (`rules`)
 ```
 DistributionRulesConfig
+├── hasComponentOwners: boolean                                        — VPR-9699
 └── componentOwners: [{component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE, owner, description}]
 ```
-Scope mínimo (VPR-9643). Explícitamente pendientes, sin resolver todavía: fees/deducciones,
-multi-moneda por regla, remanente/cascada, impuestos y seguros (no tienen columna propia hoy).
+Scope mínimo (VPR-9643). `hasComponentOwners` declara si el deal usa esta asignación o no — sin
+validación cruzada con `componentOwners` al guardar (se permiten drafts parciales/inconsistentes
+mientras la config no esté `ACTIVE`, mismo criterio que el resto del proyecto). Explícitamente
+pendientes, sin resolver todavía: fees/deducciones, multi-moneda por regla, remanente/cascada,
+impuestos y seguros (no tienen columna propia hoy — `PaymentComponent` tampoco tiene un valor para
+"impuestos" todavía, gap conocido).
 
 ### Ownership (`ownership`)
 ```
