@@ -32,7 +32,7 @@ public class UpdateDistributionRulesUseCase {
                 .orElseThrow(() -> new DistributionConfigNotFoundException(id));
         var existing = mapper.toDomain(entity);
 
-        var rules = buildDistributionRulesConfig(request.componentOwners());
+        var rules = buildDistributionRulesConfig(request.hasComponentOwners(), request.componentOwners());
 
         var updatedPayload = new DistributionConfigPayload(
                 existing.config().country(),
@@ -54,9 +54,11 @@ public class UpdateDistributionRulesUseCase {
         return mapper.toDomain(saved);
     }
 
-    private DistributionRulesConfig buildDistributionRulesConfig(List<ComponentOwnerRuleRequest> ruleRequests) {
+    private DistributionRulesConfig buildDistributionRulesConfig(Boolean hasComponentOwners, List<ComponentOwnerRuleRequest> ruleRequests) {
+        var enabled = Boolean.TRUE.equals(hasComponentOwners);
+
         if (ruleRequests == null || ruleRequests.isEmpty()) {
-            return new DistributionRulesConfig(List.of());
+            return new DistributionRulesConfig(enabled, List.of());
         }
 
         var seenComponents = new HashSet<>();
@@ -64,7 +66,7 @@ public class UpdateDistributionRulesUseCase {
                 .map(r -> buildComponentOwnerRule(r, seenComponents))
                 .toList();
 
-        return new DistributionRulesConfig(componentOwners);
+        return new DistributionRulesConfig(enabled, componentOwners);
     }
 
     private ComponentOwnerRule buildComponentOwnerRule(ComponentOwnerRuleRequest ruleRequest, HashSet<Object> seenComponents) {

@@ -62,7 +62,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_rulesForAll4Components_persistsAsIs() {
         mockExisting(EMPTY_PAYLOAD);
-        var request = new UpdateDistributionRulesRequest(List.of(
+        var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null),
                 new ComponentOwnerRuleRequest(PaymentComponent.INTEREST, "funder", null),
                 new ComponentOwnerRuleRequest(PaymentComponent.LATE_FEE, "servicer", "late fees go to servicer"),
@@ -79,7 +79,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_ruleWithoutComponent_throwsInvalidDistributionConfigException() {
         mockExisting(EMPTY_PAYLOAD);
-        var request = new UpdateDistributionRulesRequest(List.of(
+        var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(null, "funder", null)));
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
@@ -89,7 +89,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_ruleWithoutOwner_throwsInvalidDistributionConfigException() {
         mockExisting(EMPTY_PAYLOAD);
-        var request = new UpdateDistributionRulesRequest(List.of(
+        var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, null, null)));
 
         assertThatThrownBy(() -> useCase.execute("id-1", request))
@@ -99,7 +99,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_duplicateComponent_throwsInvalidDistributionConfigException() {
         mockExisting(EMPTY_PAYLOAD);
-        var request = new UpdateDistributionRulesRequest(List.of(
+        var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null),
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "servicer", null)));
 
@@ -110,7 +110,7 @@ class UpdateDistributionRulesUseCaseTest {
     @Test
     void execute_emptyOrMissingRules_persistsEmptyListWithoutError() {
         mockExisting(EMPTY_PAYLOAD);
-        var request = new UpdateDistributionRulesRequest(null);
+        var request = new UpdateDistributionRulesRequest(false, null);
 
         useCase.execute("id-1", request);
 
@@ -122,7 +122,7 @@ class UpdateDistributionRulesUseCaseTest {
     void execute_preservesRestOfPayload() {
         var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP", null, null, null, null, null, null, null, null);
         mockExisting(existingPayload);
-        var request = new UpdateDistributionRulesRequest(null);
+        var request = new UpdateDistributionRulesRequest(null, null);
 
         useCase.execute("id-1", request);
 
@@ -130,5 +130,53 @@ class UpdateDistributionRulesUseCaseTest {
         verify(mapper).serializeConfig(captor.capture());
         assertThat(captor.getValue().country()).isEqualTo("Colombia (COL)");
         assertThat(captor.getValue().currency()).isEqualTo("COP");
+    }
+
+    @Test
+    void execute_hasComponentOwnersTrue_persists() {
+        mockExisting(EMPTY_PAYLOAD);
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules();
+        assertThat(saved.hasComponentOwners()).isTrue();
+    }
+
+    @Test
+    void execute_hasComponentOwnersFalseWithEmptyList_persists() {
+        mockExisting(EMPTY_PAYLOAD);
+        var request = new UpdateDistributionRulesRequest(false, List.of());
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules();
+        assertThat(saved.hasComponentOwners()).isFalse();
+        assertThat(saved.componentOwners()).isEmpty();
+    }
+
+    @Test
+    void execute_hasComponentOwnersFalseWithData_persistsWithoutError() {
+        mockExisting(EMPTY_PAYLOAD);
+        var request = new UpdateDistributionRulesRequest(false, List.of(
+                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null)));
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules();
+        assertThat(saved.hasComponentOwners()).isFalse();
+        assertThat(saved.componentOwners()).hasSize(1);
+    }
+
+    @Test
+    void execute_hasComponentOwnersNotSent_defaultsToFalse() {
+        mockExisting(EMPTY_PAYLOAD);
+        var request = new UpdateDistributionRulesRequest(null, null);
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedRules();
+        assertThat(saved.hasComponentOwners()).isFalse();
     }
 }
