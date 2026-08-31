@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.infrastructure.web;
 
 import com.getvaas.distribution.engine.application.usecase.ActivateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.CreateDistributionConfigUseCase;
+import com.getvaas.distribution.engine.application.usecase.DeactivateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.GetDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.ResolveActiveDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.RunReadinessChecksUseCase;
@@ -56,6 +57,7 @@ public class DistributionConfigRouter {
     private final UpdateDistributionRulesUseCase updateDistributionRulesUseCase;
     private final UpdateOwnershipUseCase updateOwnershipUseCase;
     private final ActivateDistributionConfigUseCase activateDistributionConfigUseCase;
+    private final DeactivateDistributionConfigUseCase deactivateDistributionConfigUseCase;
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
     private final RunReadinessChecksUseCase runReadinessChecksUseCase;
@@ -155,5 +157,11 @@ public class DistributionConfigRouter {
     @PostMapping("/{id}/activate")
     public DistributionConfigResponse activate(@PathVariable String id) {
         return DistributionConfigResponse.from(activateDistributionConfigUseCase.execute(id));
+    }
+
+    @VaasSecurity
+    @PostMapping("/{id}/deactivate")
+    public DistributionConfigResponse deactivate(@PathVariable String id) {
+        return DistributionConfigResponse.from(deactivateDistributionConfigUseCase.execute(id));
     }
 }

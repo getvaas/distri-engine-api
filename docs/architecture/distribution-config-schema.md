@@ -236,6 +236,15 @@ payload de una vez (salvo `PUT /configs/{id}`, que solo cubre Deal Info):
 | `PUT /configs/{id}/notifications` | Notifications (channels/events + templates juntas) |
 | `PUT /configs/{id}/transfer-instructions` | Transfer Instructions |
 
+## Endpoints de estado
+
+Acciones sobre `status` de la entidad, no sobre `config_json` — por eso son `POST`, no `PUT`:
+
+| Endpoint | Efecto |
+|---|---|
+| `POST /configs/{id}/activate` | Pone `status=ACTIVE`; desactiva (`INACTIVE`) cualquier otra config `ACTIVE` del mismo `companyId` — nunca hay dos `ACTIVE` a la vez (VPR-9644) |
+| `POST /configs/{id}/deactivate` | Pone `status=INACTIVE`, sin validar el status actual ni afectar otras configs (VPR-9641, scope reducido — dry-run y versionado quedan sin resolver) |
+
 ## Convención de nombres
 
 Los nombres de campo del JSON siguen el nombre de la etapa del wizard (`paymentFilters`, no
