@@ -13,6 +13,7 @@ import com.getvaas.distribution.engine.application.usecase.UpdateOwnershipUseCas
 import com.getvaas.distribution.engine.application.usecase.UpdatePoolConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateReadinessChecksConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateTransferInstructionsUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdateVirtualColumnsUseCase;
 import com.getvaas.distribution.engine.infrastructure.web.dto.CreateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfigResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ReadinessCheckOutcomeResponse;
@@ -24,6 +25,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFilte
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateReadinessChecksConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateTransferInstructionsRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateVirtualColumnsRequest;
 import com.getvaas.security.annotation.VaasSecurity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,7 @@ public class DistributionConfigRouter {
     private final RunReadinessChecksUseCase runReadinessChecksUseCase;
     private final UpdateNotificationsUseCase updateNotificationsUseCase;
     private final UpdateTransferInstructionsUseCase updateTransferInstructionsUseCase;
+    private final UpdateVirtualColumnsUseCase updateVirtualColumnsUseCase;
 
     @VaasSecurity
     @GetMapping("/active")
@@ -139,6 +142,13 @@ public class DistributionConfigRouter {
     public DistributionConfigResponse updateTransferInstructions(
             @PathVariable String id, @Valid @RequestBody UpdateTransferInstructionsRequest request) {
         return DistributionConfigResponse.from(updateTransferInstructionsUseCase.execute(id, request));
+    }
+
+    @VaasSecurity
+    @PutMapping("/{id}/virtual-columns")
+    public DistributionConfigResponse updateVirtualColumns(
+            @PathVariable String id, @Valid @RequestBody UpdateVirtualColumnsRequest request) {
+        return DistributionConfigResponse.from(updateVirtualColumnsUseCase.execute(id, request));
     }
 
     @VaasSecurity

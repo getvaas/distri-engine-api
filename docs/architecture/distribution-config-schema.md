@@ -26,7 +26,7 @@ de ejecución completo.
 | Deal Info | `country`, `currency` (root, no anidado) | ✅ Tipado | VPR-9644 |
 | Pool Strategy | `pool` → `PoolConfig` | ✅ Tipado (parcial — ver abajo) | VPR-9628, VPR-9629, VPR-9630 |
 | Payment Filters | `paymentFilters` → `PaymentFiltersConfig` | ✅ Tipado (completo) | VPR-9631, VPR-9632, VPR-9633, VPR-9634 |
-| Virtual Columns | `virtualColumns` → `JsonNode` | ⏳ Placeholder | sin ticket de estructura aún |
+| Virtual Columns | `virtualColumns` → `VirtualColumnsConfig` | ✅ Tipado | VPR-9696 |
 | Distribution Rules | `rules` → `DistributionRulesConfig` | ✅ Tipado (scope mínimo) | VPR-9643, VPR-9699, VPR-9702, VPR-9703, VPR-9704, VPR-9705, VPR-9706 |
 | Ownership | `ownership` → `OwnershipConfig` | ✅ Tipado | VPR-9635, VPR-9636 |
 | Readiness Checks | `readinessChecks` → `ReadinessChecksConfig` | ✅ Tipado | VPR-9637, VPR-9638 |
@@ -54,6 +54,26 @@ PaymentFiltersConfig
 │   (groups: OR[AND[{tableA, tableB, gateway}]])
 └── dateTimeFilters: DateTimeFiltersConfig (rules: [flat, sin AND/OR]) — VPR-9634
 ```
+
+### Virtual Columns (`virtualColumns`)
+```
+VirtualColumnsConfig
+└── columns: [VirtualColumn]                                            — VPR-9696
+    ├── name: String (clave con la que otras etapas la referencian)
+    └── formula: String (ej. "capital + interest")
+```
+`formula` se persiste como string crudo, sin validar su sintaxis en el wizard — el parseo y la
+evaluación real por fila (operadores `+ - * /` y paréntesis, existencia de las columnas
+referenciadas) son responsabilidad de la etapa de ejecución (Pista B). Se permite anidamiento
+libre: una fórmula puede referenciar a otra virtual column ya definida (ej. `lender_weight`
+referenciando `lender_amount`) — no se valida orden de evaluación ni ciclos en esta etapa. `name`
+es obligatorio y no puede repetirse dentro de la lista; `formula` es obligatoria.
+
+Es un mecanismo **separado** de Distribution Rules (VPR-9643, `PaymentComponent`) — no lo
+reemplaza ni lo extiende. Otras etapas (Distribution Rules, Ownership, Payment Filters) referencian
+el `name` de una virtual column en sus campos de texto libre ya existentes (ej.
+`ComponentOwnerRule.owner`, `PaymentFilterCondition.field`, `BalanceStrategyConfig.amountField`),
+igual que ya referencian columnas reales del payment tape.
 
 ### Distribution Rules (`rules`)
 ```
@@ -209,13 +229,12 @@ payload de una vez (salvo `PUT /configs/{id}`, que solo cubre Deal Info):
 | `PUT /configs/{id}` | Deal Info |
 | `PUT /configs/{id}/pool` | Pool Strategy |
 | `PUT /configs/{id}/payment-filters` | Payment Filters (las 4 sub-secciones juntas) |
+| `PUT /configs/{id}/virtual-columns` | Virtual Columns |
 | `PUT /configs/{id}/distribution-rules` | Distribution Rules |
 | `PUT /configs/{id}/ownership` | Ownership |
 | `PUT /configs/{id}/readiness-checks` | Readiness Checks |
 | `PUT /configs/{id}/notifications` | Notifications (channels/events + templates juntas) |
 | `PUT /configs/{id}/transfer-instructions` | Transfer Instructions |
-
-Virtual Columns todavía no tiene endpoint propio — se agrega cuando se tipe.
 
 ## Convención de nombres
 
