@@ -8,6 +8,7 @@ import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
 import com.getvaas.distribution.engine.domain.model.PoolConfig;
 import com.getvaas.distribution.engine.domain.model.ReadinessChecksConfig;
 import com.getvaas.distribution.engine.domain.model.TransferInstructionsConfig;
+import com.getvaas.distribution.engine.domain.model.VirtualColumnsConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public record DistributionConfigResponse(
         String currency,
         PoolConfig pool,
         PaymentFiltersConfig paymentFilters,
+        VirtualColumnsConfig virtualColumns,
         DistributionRulesConfig rules,
         OwnershipConfig ownership,
         ReadinessChecksConfig readinessChecks,
@@ -41,6 +43,7 @@ public record DistributionConfigResponse(
                 domain.config() != null ? domain.config().currency() : null,
                 domain.config() != null ? domain.config().pool() : null,
                 domain.config() != null ? domain.config().paymentFilters() : null,
+                domain.config() != null ? domain.config().virtualColumns() : null,
                 domain.config() != null ? domain.config().rules() : null,
                 domain.config() != null ? domain.config().ownership() : null,
                 domain.config() != null ? domain.config().readinessChecks() : null,
