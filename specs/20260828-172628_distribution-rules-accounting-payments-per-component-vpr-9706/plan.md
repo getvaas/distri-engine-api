@@ -1,5 +1,5 @@
 **Created at**: 2026-08-28
-**Status**: Approved
+**Status**: Done
 **Based on story**: @specs/20260828-172628_distribution-rules-accounting-payments-per-component-vpr-9706/story.md
 
 # Plan: Habilitar distribución de pagos contables por componente de cuota
@@ -32,18 +32,18 @@ declare, de forma independiente al flag del deal (VPR-9631), si distribuye pagos
 ### Phases
 
 #### Phase 1: Modelo + DTO
-- [ ] `ComponentOwnerRule` gana `distributeAccountingPayments: boolean`
-- [ ] `ComponentOwnerRuleRequest` gana `distributeAccountingPayments: Boolean`
+- [x] `ComponentOwnerRule` gana `distributeAccountingPayments: boolean`
+- [x] `ComponentOwnerRuleRequest` gana `distributeAccountingPayments: Boolean`
 
 #### Phase 2: Use case
-- [ ] `buildComponentOwnerRule` mapea `distributeAccountingPayments` con
+- [x] `buildComponentOwnerRule` mapea `distributeAccountingPayments` con
       `Boolean.TRUE.equals(...)`, default `false`
 
 #### Phase 3: Tests + Docs
-- [ ] `execute_distributeAccountingPaymentsTrue_persists`
-- [ ] `execute_distributeAccountingPaymentsFalse_persists`
-- [ ] `execute_distributeAccountingPaymentsNotSent_defaultsToFalse`
-- [ ] `docs/architecture/distribution-config-schema.md` — sección "Distribution Rules" actualizada
+- [x] `execute_distributeAccountingPaymentsTrue_persists`
+- [x] `execute_distributeAccountingPaymentsFalse_persists`
+- [x] `execute_distributeAccountingPaymentsNotSent_defaultsToFalse`
+- [x] `docs/architecture/distribution-config-schema.md` — sección "Distribution Rules" actualizada
       con `distributeAccountingPayments`
 
 ### Next Step

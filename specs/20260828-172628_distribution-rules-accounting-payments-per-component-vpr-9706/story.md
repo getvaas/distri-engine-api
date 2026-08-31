@@ -1,7 +1,7 @@
 **Created at**: 2026-08-28
-**Status**: In Progress
+**Status**: Done
 **Original input**: @https://pmvaas1.atlassian.net/browse/VPR-9706
-**Plan implemented**: —
+**Plan implemented**: @specs/20260828-172628_distribution-rules-accounting-payments-per-component-vpr-9706/plan.md
 
 # Story: Habilitar distribución de pagos contables por componente de cuota
 
@@ -12,13 +12,13 @@ necesita poder afinar esa decisión componente por componente: un owner de un co
 deal.
 
 ### Acceptance Criteria
-- [ ] **Given** una regla con `distributeAccountingPayments=true`, **When** se guarda la config,
+- [x] **Given** una regla con `distributeAccountingPayments=true`, **When** se guarda la config,
   **Then** persiste tal cual.
-- [ ] **Given** una regla con `distributeAccountingPayments=false`, **When** se guarda, **Then**
+- [x] **Given** una regla con `distributeAccountingPayments=false`, **When** se guarda, **Then**
   persiste tal cual.
-- [ ] **Given** una regla sin `distributeAccountingPayments` enviado, **When** se guarda, **Then**
+- [x] **Given** una regla sin `distributeAccountingPayments` enviado, **When** se guarda, **Then**
   persiste como `false` — mismo patrón que `hasComponentOwners` (VPR-9699).
-- [ ] **Given** el flag a nivel deal (`AccountingPaymentsConfig.distributeAccountingPayments`,
+- [x] **Given** el flag a nivel deal (`AccountingPaymentsConfig.distributeAccountingPayments`,
   VPR-9631) en cualquier valor, **When** se guarda una regla con su propio
   `distributeAccountingPayments`, **Then** ambos persisten de forma independiente, sin validación
   cruzada entre ellos.
