@@ -6,6 +6,7 @@ import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStat
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigStatusRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,20 +24,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ActivateDistributionConfigUseCaseTest {
+class UpdateDistributionConfigStatusUseCaseTest {
 
     @Mock
     private DistributionConfigJPARepository repository;
     @Mock
     private DistributionConfigMapper mapper;
     @InjectMocks
-    private ActivateDistributionConfigUseCase useCase;
+    private UpdateDistributionConfigStatusUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
             new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
 
     @Test
-    void execute_noOtherActiveConfig_activatesTarget() {
+    void execute_activateWithNoOtherActiveConfig_setsActive() {
         var entity = DistributionEngineConfigEntity.builder()
                 .id("id-1").companyId(3L).status(DistributionConfigStatus.DRAFT).build();
         var domain = new DistributionConfig("id-1", "Deal", 3L, null,
@@ -48,14 +49,14 @@ class ActivateDistributionConfigUseCaseTest {
         when(repository.save(entity)).thenReturn(entity);
         when(mapper.toDomain(entity)).thenReturn(domain);
 
-        var result = useCase.execute("id-1");
+        var result = useCase.execute("id-1", new UpdateDistributionConfigStatusRequest(DistributionConfigStatus.ACTIVE));
 
         assertThat(entity.getStatus()).isEqualTo(DistributionConfigStatus.ACTIVE);
         assertThat(result.status()).isEqualTo(DistributionConfigStatus.ACTIVE);
     }
 
     @Test
-    void execute_anotherConfigAlreadyActive_deactivatesTheOtherOne() {
+    void execute_activateWithAnotherConfigAlreadyActive_deactivatesTheOtherOne() {
         var target = DistributionEngineConfigEntity.builder()
                 .id("id-2").companyId(3L).status(DistributionConfigStatus.DRAFT).build();
         var currentlyActive = DistributionEngineConfigEntity.builder()
@@ -70,7 +71,7 @@ class ActivateDistributionConfigUseCaseTest {
         when(repository.save(target)).thenReturn(target);
         when(mapper.toDomain(target)).thenReturn(domain);
 
-        useCase.execute("id-2");
+        useCase.execute("id-2", new UpdateDistributionConfigStatusRequest(DistributionConfigStatus.ACTIVE));
 
         assertThat(currentlyActive.getStatus()).isEqualTo(DistributionConfigStatus.INACTIVE);
         assertThat(target.getStatus()).isEqualTo(DistributionConfigStatus.ACTIVE);
@@ -78,10 +79,67 @@ class ActivateDistributionConfigUseCaseTest {
     }
 
     @Test
-    void execute_missingId_throwsDistributionConfigNotFoundException() {
+    void execute_deactivateActiveConfig_setsInactiveWithoutTouchingSiblings() {
+        var entity = DistributionEngineConfigEntity.builder()
+                .id("id-1").companyId(3L).status(DistributionConfigStatus.ACTIVE).build();
+        var domain = new DistributionConfig("id-1", "Deal", 3L, null,
+                DistributionConfigStatus.INACTIVE, EMPTY_PAYLOAD, LocalDateTime.now(), LocalDateTime.now(), null, null);
+
+        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.toDomain(entity)).thenReturn(domain);
+
+        var result = useCase.execute("id-1", new UpdateDistributionConfigStatusRequest(DistributionConfigStatus.INACTIVE));
+
+        assertThat(result.status()).isEqualTo(DistributionConfigStatus.INACTIVE);
+        verify(repository, times(0)).findByCompanyIdAndStatusAndDeletedFalse(3L, DistributionConfigStatus.ACTIVE);
+    }
+
+    @Test
+    void execute_deactivateAlreadyInactiveConfig_isIdempotent() {
+        var entity = DistributionEngineConfigEntity.builder()
+                .id("id-1").companyId(3L).status(DistributionConfigStatus.INACTIVE).build();
+        var domain = new DistributionConfig("id-1", "Deal", 3L, null,
+                DistributionConfigStatus.INACTIVE, EMPTY_PAYLOAD, LocalDateTime.now(), LocalDateTime.now(), null, null);
+
+        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.toDomain(entity)).thenReturn(domain);
+
+        var result = useCase.execute("id-1", new UpdateDistributionConfigStatusRequest(DistributionConfigStatus.INACTIVE));
+
+        assertThat(result.status()).isEqualTo(DistributionConfigStatus.INACTIVE);
+    }
+
+    @Test
+    void execute_statusNull_throwsInvalidDistributionConfigException() {
+        var entity = DistributionEngineConfigEntity.builder().id("id-1").companyId(3L).build();
+        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+
+        var request = new UpdateDistributionConfigStatusRequest(null);
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_statusDraft_throwsInvalidDistributionConfigException() {
+        var entity = DistributionEngineConfigEntity.builder().id("id-1").companyId(3L).build();
+        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+
+        var request = new UpdateDistributionConfigStatusRequest(DistributionConfigStatus.DRAFT);
+
+        assertThatThrownBy(() -> useCase.execute("id-1", request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_configNotFound_throwsDistributionConfigNotFoundException() {
         when(repository.findByIdAndDeletedFalse("missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.execute("missing"))
+        var request = new UpdateDistributionConfigStatusRequest(DistributionConfigStatus.ACTIVE);
+
+        assertThatThrownBy(() -> useCase.execute("missing", request))
                 .isInstanceOf(DistributionConfigNotFoundException.class);
     }
 }
