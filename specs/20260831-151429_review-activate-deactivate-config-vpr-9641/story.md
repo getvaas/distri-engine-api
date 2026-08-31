@@ -1,7 +1,7 @@
 **Created at**: 2026-08-31
-**Status**: In Progress
+**Status**: Done
 **Original input**: @https://pmvaas1.atlassian.net/browse/VPR-9641
-**Plan implemented**: —
+**Plan implemented**: @specs/20260831-151429_review-activate-deactivate-config-vpr-9641/plan.md
 
 # Story: Agregar capacidad de desactivar una config
 
@@ -11,11 +11,11 @@ existe una acción para desactivarla. El operador necesita poder desactivar una 
 — por ejemplo, para dejar sin config activa a un borrower sin tener que activar una nueva.
 
 ### Acceptance Criteria
-- [ ] **Given** una config con status `ACTIVE`, **When** se desactiva, **Then** su status pasa a
+- [x] **Given** una config con status `ACTIVE`, **When** se desactiva, **Then** su status pasa a
   `INACTIVE`.
-- [ ] **Given** una config con status `INACTIVE`, **When** se desactiva de nuevo, **Then** no hay
+- [x] **Given** una config con status `INACTIVE`, **When** se desactiva de nuevo, **Then** no hay
   error — la operación es idempotente.
-- [ ] **Given** una config con status `DRAFT`, **When** se desactiva, **Then** su status pasa a
+- [x] **Given** una config con status `DRAFT`, **When** se desactiva, **Then** su status pasa a
   `INACTIVE` sin error — mismo criterio permisivo que activate, que tampoco valida el status
   actual antes de activar.
 

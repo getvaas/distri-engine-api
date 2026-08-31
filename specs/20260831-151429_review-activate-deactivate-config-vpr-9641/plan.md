@@ -1,5 +1,5 @@
 **Created at**: 2026-08-31
-**Status**: Approved
+**Status**: Done
 **Based on story**: @specs/20260831-151429_review-activate-deactivate-config-vpr-9641/story.md
 
 # Plan: Agregar capacidad de desactivar una config
@@ -33,16 +33,16 @@ contraparte directa de `ActivateDistributionConfigUseCase` ya implementado.
 ### Phases
 
 #### Phase 1: Use case + endpoint
-- [ ] `DeactivateDistributionConfigUseCase` (nuevo, mismo paquete que `ActivateDistributionConfigUseCase`)
-- [ ] `POST /configs/{id}/deactivate` en `DistributionConfigRouter`
-- [ ] Inyección de `DeactivateDistributionConfigUseCase` en el router
+- [x] `DeactivateDistributionConfigUseCase` (nuevo, mismo paquete que `ActivateDistributionConfigUseCase`)
+- [x] `POST /configs/{id}/deactivate` en `DistributionConfigRouter`
+- [x] Inyección de `DeactivateDistributionConfigUseCase` en el router
 
 #### Phase 2: Tests + Docs
-- [ ] `execute_activeConfig_setsStatusInactive`
-- [ ] `execute_alreadyInactiveConfig_isIdempotent`
-- [ ] `execute_draftConfig_setsStatusInactiveWithoutError`
-- [ ] `execute_configNotFound_throwsDistributionConfigNotFoundException`
-- [ ] `docs/architecture/distribution-config-schema.md` — agregar
+- [x] `execute_activeConfig_setsStatusInactive`
+- [x] `execute_alreadyInactiveConfig_isIdempotent`
+- [x] `execute_draftConfig_setsStatusInactiveWithoutError`
+- [x] `execute_configNotFound_throwsDistributionConfigNotFoundException`
+- [x] `docs/architecture/distribution-config-schema.md` — agregar
       `POST /configs/{id}/deactivate` a la tabla de endpoints
 
 ### Next Step
