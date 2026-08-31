@@ -236,14 +236,18 @@ payload de una vez (salvo `PUT /configs/{id}`, que solo cubre Deal Info):
 | `PUT /configs/{id}/notifications` | Notifications (channels/events + templates juntas) |
 | `PUT /configs/{id}/transfer-instructions` | Transfer Instructions |
 
-## Endpoints de estado
+## Endpoint de estado
 
-Acciones sobre `status` de la entidad, no sobre `config_json` — por eso son `POST`, no `PUT`:
+`PUT /configs/{id}/status` — único endpoint para activar/desactivar (VPR-9641), reemplaza los
+endpoints separados `/activate`/`/deactivate`. Recibe `{status: ACTIVE | INACTIVE}`:
 
-| Endpoint | Efecto |
-|---|---|
-| `POST /configs/{id}/activate` | Pone `status=ACTIVE`; desactiva (`INACTIVE`) cualquier otra config `ACTIVE` del mismo `companyId` — nunca hay dos `ACTIVE` a la vez (VPR-9644) |
-| `POST /configs/{id}/deactivate` | Pone `status=INACTIVE`, sin validar el status actual ni afectar otras configs (VPR-9641, scope reducido — dry-run y versionado quedan sin resolver) |
+- **`ACTIVE`**: desactiva (`INACTIVE`) cualquier otra config `ACTIVE` del mismo `companyId` —
+  nunca hay dos `ACTIVE` a la vez (VPR-9644).
+- **`INACTIVE`**: sin ese efecto secundario, sin validar el status actual (idempotente).
+- **`DRAFT`** (o `status` no enviado): rechazado — no es un target válido para este endpoint.
+
+Scope reducido (VPR-9641) — dry-run/simulación antes de activar y versionado vs. config única por
+borrower quedan sin resolver, fuera de esta historia.
 
 ## Convención de nombres
 

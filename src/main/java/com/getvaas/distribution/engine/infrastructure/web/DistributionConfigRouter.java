@@ -1,12 +1,11 @@
 package com.getvaas.distribution.engine.infrastructure.web;
 
-import com.getvaas.distribution.engine.application.usecase.ActivateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.CreateDistributionConfigUseCase;
-import com.getvaas.distribution.engine.application.usecase.DeactivateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.GetDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.ResolveActiveDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.RunReadinessChecksUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdatePaymentFiltersUseCase;
+import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigStatusUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionRulesUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateNotificationsUseCase;
@@ -19,6 +18,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.CreateDistribution
 import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfigResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ReadinessCheckOutcomeResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigStatusRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateNotificationsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipRequest;
@@ -56,8 +56,7 @@ public class DistributionConfigRouter {
     private final UpdatePaymentFiltersUseCase updatePaymentFiltersUseCase;
     private final UpdateDistributionRulesUseCase updateDistributionRulesUseCase;
     private final UpdateOwnershipUseCase updateOwnershipUseCase;
-    private final ActivateDistributionConfigUseCase activateDistributionConfigUseCase;
-    private final DeactivateDistributionConfigUseCase deactivateDistributionConfigUseCase;
+    private final UpdateDistributionConfigStatusUseCase updateDistributionConfigStatusUseCase;
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final UpdateReadinessChecksConfigUseCase updateReadinessChecksConfigUseCase;
     private final RunReadinessChecksUseCase runReadinessChecksUseCase;
@@ -154,14 +153,9 @@ public class DistributionConfigRouter {
     }
 
     @VaasSecurity
-    @PostMapping("/{id}/activate")
-    public DistributionConfigResponse activate(@PathVariable String id) {
-        return DistributionConfigResponse.from(activateDistributionConfigUseCase.execute(id));
-    }
-
-    @VaasSecurity
-    @PostMapping("/{id}/deactivate")
-    public DistributionConfigResponse deactivate(@PathVariable String id) {
-        return DistributionConfigResponse.from(deactivateDistributionConfigUseCase.execute(id));
+    @PutMapping("/{id}/status")
+    public DistributionConfigResponse updateStatus(
+            @PathVariable String id, @Valid @RequestBody UpdateDistributionConfigStatusRequest request) {
+        return DistributionConfigResponse.from(updateDistributionConfigStatusUseCase.execute(id, request));
     }
 }

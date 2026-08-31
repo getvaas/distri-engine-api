@@ -2,49 +2,68 @@
 **Status**: Done
 **Based on story**: @specs/20260831-151429_review-activate-deactivate-config-vpr-9641/story.md
 
-# Plan: Agregar capacidad de desactivar una config
+# Plan: Activar o desactivar una config mediante un único endpoint
 
 ### Goal
-Agregar `DeactivateDistributionConfigUseCase` y su endpoint `POST /configs/{id}/deactivate`,
-contraparte directa de `ActivateDistributionConfigUseCase` ya implementado.
+Reemplazar los endpoints separados `POST /configs/{id}/activate` /
+`POST /configs/{id}/deactivate` por un único `PUT /configs/{id}/status`, recibiendo el status
+deseado (`ACTIVE` o `INACTIVE`) en el body.
+
+### Corrección de diseño (2026-08-31)
+La primera versión de esta historia implementó dos endpoints separados
+(`ActivateDistributionConfigUseCase` ya existente + `DeactivateDistributionConfigUseCase` nuevo).
+Antes de mergear, se decidió unificarlos en uno solo — `DeactivateDistributionConfigUseCase` nunca
+llegó a mergearse; se descartó junto con `ActivateDistributionConfigUseCase` en favor de
+`UpdateDistributionConfigStatusUseCase`.
 
 ### Context
-- `src/main/java/.../application/usecase/ActivateDistributionConfigUseCase.java` — patrón exacto
-  a replicar (sin la lógica de "hermanos", que es específica de activate).
-- `src/main/java/.../infrastructure/web/DistributionConfigRouter.java` — patrón del endpoint
-  `POST /configs/{id}/activate` a replicar.
-- `src/test/java/.../application/usecase/ActivateDistributionConfigUseCaseTest.java` — patrón de
-  test a replicar.
-- `docs/architecture/distribution-config-schema.md` — tabla de endpoints, agregar la fila nueva.
+- `src/main/java/.../application/usecase/UpdateDistributionConfigStatusUseCase.java` — reemplaza a
+  `ActivateDistributionConfigUseCase` (eliminado) y `DeactivateDistributionConfigUseCase`
+  (eliminado, nunca mergeado).
+- `src/main/java/.../infrastructure/web/DistributionConfigRouter.java` — reemplaza
+  `POST /activate` + `POST /deactivate` por `PUT /status`.
+- `src/main/java/.../application/usecase/MultipleActiveDistributionConfigException.java` —
+  javadoc actualizado para referenciar el use case nuevo.
+- `docs/architecture/distribution-config-schema.md` — sección de endpoint de estado reescrita.
 
 ### Public Contracts
-- **Services**: `DeactivateDistributionConfigUseCase.execute(String id): DistributionConfig`
-  (nuevo) — busca entity por id (lanza `DistributionConfigNotFoundException` si no existe), setea
-  `status=INACTIVE`, `updatedAt=now`, guarda y devuelve el domain. Sin validar el status actual,
-  sin lógica de hermanos.
-- **Endpoint**: `POST /configs/{id}/deactivate` en `DistributionConfigRouter` (`@VaasSecurity`,
-  mismo patrón que `/activate`).
-- **Tests**: `DeactivateDistributionConfigUseCaseTest` (nuevo) —
-  - `execute_activeConfig_setsStatusInactive`
-  - `execute_alreadyInactiveConfig_isIdempotent`
-  - `execute_draftConfig_setsStatusInactiveWithoutError`
+- **DTO**: `UpdateDistributionConfigStatusRequest(DistributionConfigStatus status)` (nuevo).
+- **Services**: `UpdateDistributionConfigStatusUseCase.execute(String id, UpdateDistributionConfigStatusRequest request): DistributionConfig`
+  (nuevo) — busca entity (lanza `DistributionConfigNotFoundException` si no existe); `status=null`
+  o `status=DRAFT` → `InvalidDistributionConfigException`; `status=ACTIVE` → desactiva cualquier
+  otra config `ACTIVE` del mismo `companyId` (misma lógica que tenía
+  `ActivateDistributionConfigUseCase`); `status=INACTIVE` → solo setea, sin efectos secundarios,
+  idempotente.
+- **Endpoint**: `PUT /configs/{id}/status` en `DistributionConfigRouter` (`@VaasSecurity`).
+- **Tests**: `UpdateDistributionConfigStatusUseCaseTest` (nuevo, reemplaza a
+  `ActivateDistributionConfigUseCaseTest` y `DeactivateDistributionConfigUseCaseTest`) —
+  - `execute_activateWithNoOtherActiveConfig_setsActive`
+  - `execute_activateWithAnotherConfigAlreadyActive_deactivatesTheOtherOne`
+  - `execute_deactivateActiveConfig_setsInactiveWithoutTouchingSiblings`
+  - `execute_deactivateAlreadyInactiveConfig_isIdempotent`
+  - `execute_statusNull_throwsInvalidDistributionConfigException`
+  - `execute_statusDraft_throwsInvalidDistributionConfigException`
   - `execute_configNotFound_throwsDistributionConfigNotFoundException`
 
 ### Phases
 
 #### Phase 1: Use case + endpoint
-- [x] `DeactivateDistributionConfigUseCase` (nuevo, mismo paquete que `ActivateDistributionConfigUseCase`)
-- [x] `POST /configs/{id}/deactivate` en `DistributionConfigRouter`
-- [x] Inyección de `DeactivateDistributionConfigUseCase` en el router
+- [x] `UpdateDistributionConfigStatusRequest` (DTO, nuevo)
+- [x] `UpdateDistributionConfigStatusUseCase` (nuevo)
+- [x] Eliminar `ActivateDistributionConfigUseCase` y `DeactivateDistributionConfigUseCase`
+- [x] `PUT /configs/{id}/status` en `DistributionConfigRouter`, reemplaza `/activate` +
+      `/deactivate`
 
 #### Phase 2: Tests + Docs
-- [x] `execute_activeConfig_setsStatusInactive`
-- [x] `execute_alreadyInactiveConfig_isIdempotent`
-- [x] `execute_draftConfig_setsStatusInactiveWithoutError`
+- [x] `execute_activateWithNoOtherActiveConfig_setsActive`
+- [x] `execute_activateWithAnotherConfigAlreadyActive_deactivatesTheOtherOne`
+- [x] `execute_deactivateActiveConfig_setsInactiveWithoutTouchingSiblings`
+- [x] `execute_deactivateAlreadyInactiveConfig_isIdempotent`
+- [x] `execute_statusNull_throwsInvalidDistributionConfigException`
+- [x] `execute_statusDraft_throwsInvalidDistributionConfigException`
 - [x] `execute_configNotFound_throwsDistributionConfigNotFoundException`
-- [x] `docs/architecture/distribution-config-schema.md` — agregar
-      `POST /configs/{id}/deactivate` a la tabla de endpoints
+- [x] Eliminar `ActivateDistributionConfigUseCaseTest` y `DeactivateDistributionConfigUseCaseTest`
+- [x] `docs/architecture/distribution-config-schema.md` — endpoint de estado unificado
 
 ### Next Step
-Completar Phase 1 (use case + endpoint) y confirmar que el proyecto compila antes de escribir los
-tests.
+Ninguno — historia completa.

@@ -3,30 +3,38 @@
 **Original input**: @https://pmvaas1.atlassian.net/browse/VPR-9641
 **Plan implemented**: @specs/20260831-151429_review-activate-deactivate-config-vpr-9641/plan.md
 
-# Story: Agregar capacidad de desactivar una config
+# Story: Activar o desactivar una config mediante un único endpoint
 
 ### Description
-El wizard ya puede activar una config (`ActivateDistributionConfigUseCase`, VPR-9644), pero no
-existe una acción para desactivarla. El operador necesita poder desactivar una config directamente
-— por ejemplo, para dejar sin config activa a un borrower sin tener que activar una nueva.
+El wizard ya podía activar una config (`ActivateDistributionConfigUseCase`, VPR-9644), pero no
+existía una acción para desactivarla. En vez de agregar un segundo endpoint separado
+(`/deactivate`), se unificó activar y desactivar en un único endpoint que recibe el status
+deseado — evita duplicar la forma "acción con efecto sobre el estado" en dos rutas distintas.
 
 ### Acceptance Criteria
-- [x] **Given** una config con status `ACTIVE`, **When** se desactiva, **Then** su status pasa a
-  `INACTIVE`.
-- [x] **Given** una config con status `INACTIVE`, **When** se desactiva de nuevo, **Then** no hay
-  error — la operación es idempotente.
-- [x] **Given** una config con status `DRAFT`, **When** se desactiva, **Then** su status pasa a
-  `INACTIVE` sin error — mismo criterio permisivo que activate, que tampoco valida el status
-  actual antes de activar.
+- [x] **Given** `status=ACTIVE` sin otra config `ACTIVE` para el mismo `companyId`, **When** se
+  actualiza, **Then** la config pasa a `ACTIVE`.
+- [x] **Given** `status=ACTIVE` con otra config ya `ACTIVE` para el mismo `companyId`, **When** se
+  actualiza, **Then** la otra config pasa a `INACTIVE` — nunca hay dos `ACTIVE` a la vez
+  (VPR-9644).
+- [x] **Given** `status=INACTIVE` sobre una config `ACTIVE`, **When** se actualiza, **Then** pasa
+  a `INACTIVE` sin afectar ninguna otra config.
+- [x] **Given** `status=INACTIVE` sobre una config ya `INACTIVE`, **When** se actualiza, **Then**
+  no hay error — la operación es idempotente.
+- [x] **Given** `status=DRAFT` o `status` no enviado, **When** se intenta actualizar, **Then** se
+  rechaza — `DRAFT` no es un target válido para este endpoint.
 
 ### Additional Context
-Es la contraparte directa de `ActivateDistributionConfigUseCase`, ya implementado. A diferencia de
-activate, desactivar NO tiene lógica de "hermanos" — activate garantiza que nunca haya dos
-`ACTIVE` para el mismo `companyId` a la vez (decisión resuelta en VPR-9644), pero desactivar una
-config no afecta a ninguna otra.
+Reemplaza los endpoints separados `POST /configs/{id}/activate` y `POST /configs/{id}/deactivate`
+por uno solo: `PUT /configs/{id}/status`, recibiendo `{status: ACTIVE | INACTIVE}`. Se decidió así
+en vez de mantener verbos separados porque, aunque `ACTIVE` tiene un efecto secundario real
+(desactivar hermanos) que un setter genérico podría esconder, se priorizó tener un único punto de
+entrada — el efecto secundario queda documentado en el código y en este doc en vez de en el nombre
+del endpoint.
 
-Endpoint: `POST /configs/{id}/deactivate`, mismo estilo que `POST /configs/{id}/activate` — es una
-acción sobre el estado de la entidad, no una actualización de `config_json` vía `PUT`.
+`ActivateDistributionConfigUseCase` y `DeactivateDistributionConfigUseCase` (esta última nunca
+llegó a mergearse) se reemplazan por `UpdateDistributionConfigStatusUseCase`, que concentra ambos
+comportamientos.
 
 **Explícitamente fuera de esta historia** (parte del ticket original VPR-9641, "Review & Activate",
 sin resolver todavía):

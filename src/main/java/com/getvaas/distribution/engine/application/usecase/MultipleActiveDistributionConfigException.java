@@ -1,8 +1,9 @@
 package com.getvaas.distribution.engine.application.usecase;
 
 /**
- * Defensivo: no debería ocurrir si {@link ActivateDistributionConfigUseCase} es el único camino para
- * llegar a ACTIVE, pero se valida explícitamente en vez de asumir el invariante silenciosamente.
+ * Defensivo: no debería ocurrir si {@link UpdateDistributionConfigStatusUseCase} es el único
+ * camino para llegar a ACTIVE, pero se valida explícitamente en vez de asumir el invariante
+ * silenciosamente.
  */
 public class MultipleActiveDistributionConfigException extends RuntimeException {
 
