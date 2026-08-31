@@ -1,5 +1,5 @@
 **Created at**: 2026-08-31
-**Status**: Approved
+**Status**: Done
 **Based on story**: @specs/20260831-115627_virtual-columns-computed-formula-vpr-9696/story.md
 
 # Plan: Tipar Virtual Columns — columnas derivadas por fórmula sobre el payment tape
@@ -49,35 +49,35 @@ establecido para el resto de los nodos.
 ### Phases
 
 #### Phase 1: Modelo tipado
-- [ ] `VirtualColumn` (domain, nuevo)
-- [ ] `VirtualColumnsConfig` (domain, nuevo)
-- [ ] `DistributionConfigPayload.virtualColumns` — `JsonNode` → `VirtualColumnsConfig`
-- [ ] `VirtualColumnRequest` (DTO, nuevo)
-- [ ] `UpdateVirtualColumnsRequest` (DTO, nuevo)
+- [x] `VirtualColumn` (domain, nuevo)
+- [x] `VirtualColumnsConfig` (domain, nuevo)
+- [x] `DistributionConfigPayload.virtualColumns` — `JsonNode` → `VirtualColumnsConfig`
+- [x] `VirtualColumnRequest` (DTO, nuevo)
+- [x] `UpdateVirtualColumnsRequest` (DTO, nuevo)
 
 #### Phase 2: Use case + validación
-- [ ] `UpdateVirtualColumnsUseCase` — mismo flujo que `UpdateDistributionRulesUseCase`
-- [ ] `name` null/blank → `InvalidDistributionConfigException`
-- [ ] `formula` null/blank → `InvalidDistributionConfigException`
-- [ ] `name` repetido dentro de `columns` → `InvalidDistributionConfigException`
-- [ ] Lista `null`/vacía → persiste `List.of()`, sin error
-- [ ] Sin validación de anidamiento/ciclos/orden de evaluación
+- [x] `UpdateVirtualColumnsUseCase` — mismo flujo que `UpdateDistributionRulesUseCase`
+- [x] `name` null/blank → `InvalidDistributionConfigException`
+- [x] `formula` null/blank → `InvalidDistributionConfigException`
+- [x] `name` repetido dentro de `columns` → `InvalidDistributionConfigException`
+- [x] Lista `null`/vacía → persiste `List.of()`, sin error
+- [x] Sin validación de anidamiento/ciclos/orden de evaluación
 
 #### Phase 3: Endpoint
-- [ ] `PUT /configs/{id}/virtual-columns` en `DistributionConfigRouter` (`@VaasSecurity`, mismo
+- [x] `PUT /configs/{id}/virtual-columns` en `DistributionConfigRouter` (`@VaasSecurity`, mismo
       patrón que los demás `PUT` por nodo)
-- [ ] Inyección de `UpdateVirtualColumnsUseCase` en el router
-- [ ] `DistributionConfigResponse` gana `virtualColumns: VirtualColumnsConfig`
+- [x] Inyección de `UpdateVirtualColumnsUseCase` en el router
+- [x] `DistributionConfigResponse` gana `virtualColumns: VirtualColumnsConfig`
 
 #### Phase 4: Tests + Docs
-- [ ] `execute_columnsWithNameAndFormula_persistsAsIs`
-- [ ] `execute_columnWithoutName_throwsInvalidDistributionConfigException`
-- [ ] `execute_columnWithoutFormula_throwsInvalidDistributionConfigException`
-- [ ] `execute_duplicateName_throwsInvalidDistributionConfigException`
-- [ ] `execute_emptyOrMissingColumns_persistsEmptyListWithoutError`
-- [ ] `execute_formulaReferencingAnotherVirtualColumn_persistsWithoutError`
-- [ ] `execute_preservesRestOfPayload`
-- [ ] `docs/architecture/distribution-config-schema.md` — Virtual Columns pasa a "✅ Tipado",
+- [x] `execute_columnsWithNameAndFormula_persistsAsIs`
+- [x] `execute_columnWithoutName_throwsInvalidDistributionConfigException`
+- [x] `execute_columnWithoutFormula_throwsInvalidDistributionConfigException`
+- [x] `execute_duplicateName_throwsInvalidDistributionConfigException`
+- [x] `execute_emptyOrMissingColumns_persistsEmptyListWithoutError`
+- [x] `execute_formulaReferencingAnotherVirtualColumn_persistsWithoutError`
+- [x] `execute_preservesRestOfPayload`
+- [x] `docs/architecture/distribution-config-schema.md` — Virtual Columns pasa a "✅ Tipado",
       detalle del nodo, endpoint nuevo en la tabla de endpoints
 
 ### Next Step

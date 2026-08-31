@@ -1,7 +1,7 @@
 **Created at**: 2026-08-31
-**Status**: In Progress
+**Status**: Done
 **Original input**: @https://pmvaas1.atlassian.net/browse/VPR-9696
-**Plan implemented**: —
+**Plan implemented**: @specs/20260831-115627_virtual-columns-computed-formula-vpr-9696/plan.md
 
 # Story: Tipar Virtual Columns — columnas derivadas por fórmula sobre el payment tape
 
@@ -12,15 +12,15 @@ aritméticos. Estas columnas después se referencian por nombre desde otras etap
 Rules, Ownership, Payment Filters) — hoy el nodo existe solo como placeholder sin tipar.
 
 ### Acceptance Criteria
-- [ ] **Given** una lista de virtual columns con `name` y `formula` completos, **When** se guarda
+- [x] **Given** una lista de virtual columns con `name` y `formula` completos, **When** se guarda
   la config, **Then** persiste tal cual.
-- [ ] **Given** una virtual column sin `name` o sin `formula`, **When** se intenta guardar,
+- [x] **Given** una virtual column sin `name` o sin `formula`, **When** se intenta guardar,
   **Then** se rechaza.
-- [ ] **Given** dos virtual columns con el mismo `name`, **When** se intenta guardar, **Then** se
+- [x] **Given** dos virtual columns con el mismo `name`, **When** se intenta guardar, **Then** se
   rechaza — el nombre es la clave con la que otras etapas la referencian, no puede repetirse.
-- [ ] **Given** una lista vacía o no enviada, **When** se guarda, **Then** persiste sin error — el
+- [x] **Given** una lista vacía o no enviada, **When** se guarda, **Then** persiste sin error — el
   deal puede no necesitar columnas calculadas.
-- [ ] **Given** una virtual column cuya `formula` referencia a otra virtual column ya definida
+- [x] **Given** una virtual column cuya `formula` referencia a otra virtual column ya definida
   (ej. `lender_weight` referenciando `lender_amount`), **When** se guarda, **Then** persiste sin
   error — no se valida orden de evaluación ni ciclos en este punto.
 
