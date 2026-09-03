@@ -12,24 +12,25 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Bloque 1 del pipeline de ejecución (VPR-9661, tras resolver la config activa en VPR-9660):
- * corre las precondiciones configuradas y decide si se puede seguir.
+ * Bloque 1 del pipeline de ejecución (VPR-9661): corre las precondiciones configuradas sobre una
+ * {@code DistributionConfig} puntual (identificada por {@code id}, no por "la activa de la
+ * company") y decide si se puede seguir.
  */
 @Component
 @RequiredArgsConstructor
 public class RunReadinessChecksUseCase {
 
-    private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
+    private final GetDistributionConfigUseCase getDistributionConfigUseCase;
     private final ReadinessCheckRunner readinessCheckRunner;
 
-    public ReadinessCheckOutcome execute(Long companyId, LocalDate date) {
-        var config = resolveActiveDistributionConfigUseCase.execute(companyId);
+    public ReadinessCheckOutcome execute(String id, LocalDate date) {
+        var config = getDistributionConfigUseCase.execute(id);
         var readinessChecksConfig = config.config().readinessChecks();
         var enabledChecks = readinessChecksConfig != null
                 ? readinessChecksConfig.checks().stream().map(ReadinessCheckSetting::type).toList()
                 : List.<ReadinessCheckType>of();
 
-        var context = new ReadinessCheckContext(companyId, date, config.config().country());
+        var context = new ReadinessCheckContext(config.companyId(), date, config.config().country());
         var results = readinessCheckRunner.run(enabledChecks, context);
         return ReadinessCheckOutcome.of(results);
     }
