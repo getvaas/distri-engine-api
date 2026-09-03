@@ -29,6 +29,9 @@ spring:
       jdbc-url: ${DATASOURCE___PAYMENTS_DB___URL:jdbc:mysql://dev.db.app.getvaas.com/payments_db?useUnicode=yes&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
       username: ${DATASOURCE___PAYMENTS_DB___USERNAME:SECRET}
       password: ${DATASOURCE___PAYMENTS_DB___PASSWORD:SECRET}
+  flyway:
+    enabled: false
+    locations: classpath:db/scripts/migration
   data:
     redis:
       host: ${REDIS___HOST:dev.smr.app.getvaas.com}

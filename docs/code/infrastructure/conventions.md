@@ -73,9 +73,8 @@ API — mismo patrón que `conciliation-engine-api` (Spring `RestClient`, no `Re
 | `ShedLockConfig` | Lock distribuido para jobs/cron |
 | `SnsConfig` | Cliente AWS SNS |
 
-**Nota de auditoría:** en `conciliation-engine-api`, la documentación menciona una clase `FlywayConfig`
-para migraciones multi-datasource, pero al revisar el código real (`build.gradle` y el árbol de
-`infrastructure/config/`) esa clase y la dependencia de Flyway **no existen** — es un desvío entre
-documentación y código en el repo hermano. No replicar esa mención acá hasta confirmar cómo se manejan
-las migraciones realmente (probablemente vía las migraciones de `master-trust-servicer-api`, que es
-dueño del schema `payments_db`).
+**Migraciones:** este repo sí usa Flyway (`flyway-mysql`, deshabilitado en runtime vía
+`spring.flyway.enabled: false`, mismo patrón que `payment-data-extractor`) — pero solo para tablas
+que este servicio posee, como `distribution_engine_config`. `payment_tape` sigue siendo de solo
+lectura (dueño: `payment-data-extractor`, que ya tiene su propia migración) y nunca se migra desde
+acá. Ver `docs/database/migrations.md`.

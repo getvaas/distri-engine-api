@@ -8,5 +8,13 @@ public record CreateDistributionConfigRequest(
         @NotNull Long companyId,
         Long masterTrustId,
         String country,
-        String currency
+        String currency,
+        UpdatePoolConfigRequest pool,
+        UpdatePaymentFiltersRequest paymentFilters,
+        UpdateDistributionRulesRequest distributionRules,
+        UpdateOwnershipRequest ownership,
+        UpdateReadinessChecksConfigRequest readinessChecks,
+        UpdateNotificationsRequest notifications,
+        UpdateTransferInstructionsRequest transferInstructions,
+        UpdateVirtualColumnsRequest virtualColumns
 ) {}

@@ -7,16 +7,12 @@ import com.getvaas.distribution.engine.domain.model.ConciliationRequirementsConf
 import com.getvaas.distribution.engine.domain.model.DateTimeFilterRule;
 import com.getvaas.distribution.engine.domain.model.DateTimeFiltersConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentFiltersConfig;
-import com.getvaas.distribution.engine.domain.model.DistributionConfig;
-import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.GatewayFiltersConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentFilterCondition;
 import com.getvaas.distribution.engine.domain.model.PaymentFilterConditionGroup;
 import com.getvaas.distribution.engine.domain.model.enums.DateTimeFilterRuleType;
 import com.getvaas.distribution.engine.domain.model.enums.GatewayFilterMode;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentFilterOperator;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountingPaymentsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ConciliationRequirementGroupRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ConciliationRequirementRuleRequest;
@@ -28,52 +24,23 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFilte
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Configura la etapa Payment Filters — Accounting Payments (VPR-9631), Gateway Filters
- * (VPR-9632), Conciliation Requirements (VPR-9633) y Date & Time Filters (VPR-9634). Un único
- * endpoint (`PUT /configs/{id}/payment-filters`) para toda la etapa, sin importar qué filtros use
- * el deal.
+ * Construye la etapa Payment Filters — Accounting Payments (VPR-9631), Gateway Filters
+ * (VPR-9632), Conciliation Requirements (VPR-9633) y Date & Time Filters (VPR-9634), sin importar
+ * qué filtros use el deal.
  */
 @Component
 @RequiredArgsConstructor
-public class UpdatePaymentFiltersUseCase {
+public class PaymentFiltersConfigBuilder {
 
-    private final DistributionConfigJPARepository repository;
-    private final DistributionConfigMapper mapper;
-
-    public DistributionConfig execute(String id, UpdatePaymentFiltersRequest request) {
-        var entity = repository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new DistributionConfigNotFoundException(id));
-        var existing = mapper.toDomain(entity);
-
+    public PaymentFiltersConfig build(UpdatePaymentFiltersRequest request) {
         var accountingPayments = buildAccountingPaymentsConfig(request.accountingPayments());
         var gatewayFilters = buildGatewayFiltersConfig(request.gatewayFilters());
         var conciliationRequirements = buildConciliationRequirementsConfig(request.conciliationRequirements());
         var dateTimeFilters = buildDateTimeFiltersConfig(request.dateTimeFilters());
-        var paymentFilters = new PaymentFiltersConfig(
-                accountingPayments, gatewayFilters, conciliationRequirements, dateTimeFilters);
-
-        var updatedPayload = new DistributionConfigPayload(
-                existing.config().country(),
-                existing.config().currency(),
-                existing.config().pool(),
-                paymentFilters,
-                existing.config().virtualColumns(),
-                existing.config().rules(),
-                existing.config().ownership(),
-                existing.config().readinessChecks(),
-                existing.config().notifications(),
-                existing.config().transferInstructions()
-        );
-
-        entity.setConfigJson(mapper.serializeConfig(updatedPayload));
-        entity.setUpdatedAt(LocalDateTime.now());
-
-        var saved = repository.save(entity);
-        return mapper.toDomain(saved);
+        return new PaymentFiltersConfig(accountingPayments, gatewayFilters, conciliationRequirements, dateTimeFilters);
     }
 
     private AccountingPaymentsConfig buildAccountingPaymentsConfig(AccountingPaymentsRequest request) {

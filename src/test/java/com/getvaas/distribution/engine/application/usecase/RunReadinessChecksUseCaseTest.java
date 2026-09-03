@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 class RunReadinessChecksUseCaseTest {
 
     @Mock
-    private ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
+    private GetDistributionConfigUseCase getDistributionConfigUseCase;
 
     private RunReadinessChecksUseCase useCase;
 
@@ -36,37 +36,37 @@ class RunReadinessChecksUseCaseTest {
         // Runner real (no mockeado) con la única implementación real, para probar el comportamiento
         // end-to-end de este bloque sin depender de una base de datos.
         var readinessCheckRunner = new ReadinessCheckRunner(List.of(new BusinessDayCheck()));
-        useCase = new RunReadinessChecksUseCase(resolveActiveDistributionConfigUseCase, readinessCheckRunner);
+        useCase = new RunReadinessChecksUseCase(getDistributionConfigUseCase, readinessCheckRunner);
     }
 
-    private DistributionConfig activeConfigWith(ReadinessChecksConfig readinessChecksConfig) {
+    private DistributionConfig configWith(ReadinessChecksConfig readinessChecksConfig) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
                 null, null, null, null, null, readinessChecksConfig, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null,
                 DistributionConfigStatus.ACTIVE, payload, LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
 
-    private ReadinessChecksConfig configWith(ReadinessCheckType type) {
+    private ReadinessChecksConfig readinessConfigWith(ReadinessCheckType type) {
         return new ReadinessChecksConfig(List.of(
                 new ReadinessCheckSetting(type, ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE)));
     }
 
     @Test
     void execute_businessDayEnabledAndWeekday_isReadyToDistribute() {
-        when(resolveActiveDistributionConfigUseCase.execute(3L))
-                .thenReturn(activeConfigWith(configWith(ReadinessCheckType.BUSINESS_DAY)));
+        when(getDistributionConfigUseCase.execute("id-1"))
+                .thenReturn(configWith(readinessConfigWith(ReadinessCheckType.BUSINESS_DAY)));
 
-        var outcome = useCase.execute(3L, LocalDate.of(2026, 8, 24)); // lunes
+        var outcome = useCase.execute("id-1", LocalDate.of(2026, 8, 24)); // lunes
 
         assertThat(outcome.readyToDistribute()).isTrue();
     }
 
     @Test
     void execute_businessDayEnabledAndWeekend_isNotReadyToDistribute() {
-        when(resolveActiveDistributionConfigUseCase.execute(3L))
-                .thenReturn(activeConfigWith(configWith(ReadinessCheckType.BUSINESS_DAY)));
+        when(getDistributionConfigUseCase.execute("id-1"))
+                .thenReturn(configWith(readinessConfigWith(ReadinessCheckType.BUSINESS_DAY)));
 
-        var outcome = useCase.execute(3L, LocalDate.of(2026, 8, 22)); // sábado
+        var outcome = useCase.execute("id-1", LocalDate.of(2026, 8, 22)); // sábado
 
         assertThat(outcome.readyToDistribute()).isFalse();
     }
@@ -74,10 +74,10 @@ class RunReadinessChecksUseCaseTest {
     @Test
     void execute_unimplementedCheckEnabled_isStillReadyToDistribute() {
         // NOT_IMPLEMENTED no bloquea — no hay capacidad todavía para evaluarlo, distinto de un FAILED real.
-        when(resolveActiveDistributionConfigUseCase.execute(3L))
-                .thenReturn(activeConfigWith(configWith(ReadinessCheckType.PAYMENT_TAPE_LOADED)));
+        when(getDistributionConfigUseCase.execute("id-1"))
+                .thenReturn(configWith(readinessConfigWith(ReadinessCheckType.PAYMENT_TAPE_LOADED)));
 
-        var outcome = useCase.execute(3L, LocalDate.of(2026, 8, 24));
+        var outcome = useCase.execute("id-1", LocalDate.of(2026, 8, 24));
 
         assertThat(outcome.readyToDistribute()).isTrue();
         assertThat(outcome.results().get(0).status().name()).isEqualTo("NOT_IMPLEMENTED");

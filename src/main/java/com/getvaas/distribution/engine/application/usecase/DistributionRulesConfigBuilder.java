@@ -4,13 +4,9 @@ import com.getvaas.distribution.engine.domain.model.AccountTransferRule;
 import com.getvaas.distribution.engine.domain.model.BalanceStrategyConfig;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
 import com.getvaas.distribution.engine.domain.model.Deduction;
-import com.getvaas.distribution.engine.domain.model.DistributionConfig;
-import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentFilterCondition;
 import com.getvaas.distribution.engine.domain.model.RemainingBalanceConfig;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
@@ -18,58 +14,24 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.DeductionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.RemainingBalanceConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
 /**
- * Configura la etapa Distribution Rules — owner por componente de la cuota (VPR-9643), primera
+ * Construye la etapa Distribution Rules — owner por componente de la cuota (VPR-9643), primera
  * iteración mínima configurable. Fees/deducciones, multi-moneda por regla, remanente/cascada e
  * impuestos/seguros quedan explícitamente fuera de alcance.
  */
 @Component
-@RequiredArgsConstructor
-public class UpdateDistributionRulesUseCase {
+public class DistributionRulesConfigBuilder {
 
-    private final DistributionConfigJPARepository repository;
-    private final DistributionConfigMapper mapper;
+    public DistributionRulesConfig build(UpdateDistributionRulesRequest request) {
+        var enabled = Boolean.TRUE.equals(request.hasComponentOwners());
+        var remainingBalance = buildRemainingBalanceConfig(request.remainingBalance());
 
-    public DistributionConfig execute(String id, UpdateDistributionRulesRequest request) {
-        var entity = repository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new DistributionConfigNotFoundException(id));
-        var existing = mapper.toDomain(entity);
-
-        var rules = buildDistributionRulesConfig(request.hasComponentOwners(), request.componentOwners(),
-                request.remainingBalance());
-
-        var updatedPayload = new DistributionConfigPayload(
-                existing.config().country(),
-                existing.config().currency(),
-                existing.config().pool(),
-                existing.config().paymentFilters(),
-                existing.config().virtualColumns(),
-                rules,
-                existing.config().ownership(),
-                existing.config().readinessChecks(),
-                existing.config().notifications(),
-                existing.config().transferInstructions()
-        );
-
-        entity.setConfigJson(mapper.serializeConfig(updatedPayload));
-        entity.setUpdatedAt(LocalDateTime.now());
-
-        var saved = repository.save(entity);
-        return mapper.toDomain(saved);
-    }
-
-    private DistributionRulesConfig buildDistributionRulesConfig(Boolean hasComponentOwners, List<ComponentOwnerRuleRequest> ruleRequests,
-            RemainingBalanceConfigRequest remainingBalanceRequest) {
-        var enabled = Boolean.TRUE.equals(hasComponentOwners);
-        var remainingBalance = buildRemainingBalanceConfig(remainingBalanceRequest);
-
+        var ruleRequests = request.componentOwners();
         if (ruleRequests == null || ruleRequests.isEmpty()) {
             return new DistributionRulesConfig(enabled, List.of(), remainingBalance);
         }

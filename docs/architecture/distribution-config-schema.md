@@ -221,20 +221,19 @@ Relacionado, explícitamente fuera de alcance: VPR-9715 es alta de documentos y 
 
 ## Endpoints por nodo
 
-Cada nodo tipado tiene su propio `PUT` — no hay un único endpoint gigante que actualice todo el
-payload de una vez (salvo `PUT /configs/{id}`, que solo cubre Deal Info):
+Un único `PUT /configs/{id}` recibe la estructura completa de los 8 nodos del wizard (pool,
+paymentFilters, virtualColumns, rules, ownership, readinessChecks, notifications,
+transferInstructions) junto con Deal Info — consolidado a partir de los 8 `PUT` por bloque que
+existían antes (uno por nodo). El request es la fuente de verdad: un nodo ausente/`null` en el
+body resulta en `null` en el config guardado, no en preservar el valor anterior — no hay merge
+implícito contra el `config_json` existente. Deal Info (`name`/`masterTrustId`/`country`/
+`currency`) es la única excepción: conserva el fallback histórico (campo `null` → se preserva el
+valor existente), porque son campos sueltos, no un bloque del wizard.
 
-| Endpoint | Nodo(s) que actualiza |
-|---|---|
-| `PUT /configs/{id}` | Deal Info |
-| `PUT /configs/{id}/pool` | Pool Strategy |
-| `PUT /configs/{id}/payment-filters` | Payment Filters (las 4 sub-secciones juntas) |
-| `PUT /configs/{id}/virtual-columns` | Virtual Columns |
-| `PUT /configs/{id}/distribution-rules` | Distribution Rules |
-| `PUT /configs/{id}/ownership` | Ownership |
-| `PUT /configs/{id}/readiness-checks` | Readiness Checks |
-| `PUT /configs/{id}/notifications` | Notifications (channels/events + templates juntas) |
-| `PUT /configs/{id}/transfer-instructions` | Transfer Instructions |
+`POST /configs` (creación) acepta opcionalmente esos mismos 8 nodos desde el día 1, para el caso
+en que el cliente cree la config completa de una sola vez en lugar de vía wizard — reusa los mismos
+componentes de validación/construcción por nodo (`PoolConfigBuilder`, `PaymentFiltersConfigBuilder`,
+etc., en `application/usecase/`) que el update.
 
 ## Endpoint de estado
 
