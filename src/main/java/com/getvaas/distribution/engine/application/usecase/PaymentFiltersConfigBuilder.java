@@ -21,6 +21,7 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterCondi
 import com.getvaas.distribution.engine.infrastructure.web.dto.PaymentFilterConditionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateGatewayFiltersRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFiltersRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.List;
  * qué filtros use el deal.
  */
 @Component
+@RequiredArgsConstructor
 public class PaymentFiltersConfigBuilder {
 
     public PaymentFiltersConfig build(UpdatePaymentFiltersRequest request) {

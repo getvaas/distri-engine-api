@@ -25,14 +25,14 @@ public class CreateDistributionConfigUseCase {
 
     private final DistributionConfigJPARepository repository;
     private final DistributionConfigMapper mapper;
-    private final PoolConfigBuilder poolConfigBuilder = new PoolConfigBuilder();
-    private final PaymentFiltersConfigBuilder paymentFiltersConfigBuilder = new PaymentFiltersConfigBuilder();
-    private final DistributionRulesConfigBuilder distributionRulesConfigBuilder = new DistributionRulesConfigBuilder();
-    private final OwnershipConfigBuilder ownershipConfigBuilder = new OwnershipConfigBuilder();
-    private final ReadinessChecksConfigBuilder readinessChecksConfigBuilder = new ReadinessChecksConfigBuilder();
-    private final NotificationsConfigBuilder notificationsConfigBuilder = new NotificationsConfigBuilder();
-    private final TransferInstructionsConfigBuilder transferInstructionsConfigBuilder = new TransferInstructionsConfigBuilder();
-    private final VirtualColumnsConfigBuilder virtualColumnsConfigBuilder = new VirtualColumnsConfigBuilder();
+    private final PoolConfigBuilder poolConfigBuilder;
+    private final PaymentFiltersConfigBuilder paymentFiltersConfigBuilder;
+    private final DistributionRulesConfigBuilder distributionRulesConfigBuilder;
+    private final OwnershipConfigBuilder ownershipConfigBuilder;
+    private final ReadinessChecksConfigBuilder readinessChecksConfigBuilder;
+    private final NotificationsConfigBuilder notificationsConfigBuilder;
+    private final TransferInstructionsConfigBuilder transferInstructionsConfigBuilder;
+    private final VirtualColumnsConfigBuilder virtualColumnsConfigBuilder;
 
     public DistributionConfig execute(CreateDistributionConfigRequest request) {
         var now = LocalDateTime.now();

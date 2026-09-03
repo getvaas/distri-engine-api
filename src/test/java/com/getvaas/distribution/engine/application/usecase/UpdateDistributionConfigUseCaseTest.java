@@ -13,10 +13,10 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistribution
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateVirtualColumnsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.VirtualColumnRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,8 +37,17 @@ class UpdateDistributionConfigUseCaseTest {
     private DistributionConfigJPARepository repository;
     @Mock
     private DistributionConfigMapper mapper;
-    @InjectMocks
     private UpdateDistributionConfigUseCase useCase;
+
+    @BeforeEach
+    void setUp() {
+        // Builders reales (no mockeados): son funciones puras sin dependencias, así que se
+        // ejercitan de verdad en vez de mockearlos uno por uno.
+        useCase = new UpdateDistributionConfigUseCase(repository, mapper,
+                new PoolConfigBuilder(), new PaymentFiltersConfigBuilder(), new DistributionRulesConfigBuilder(),
+                new OwnershipConfigBuilder(), new ReadinessChecksConfigBuilder(), new NotificationsConfigBuilder(),
+                new TransferInstructionsConfigBuilder(), new VirtualColumnsConfigBuilder());
+    }
 
     private static final UpdateDistributionConfigRequest EMPTY_REQUEST =
             new UpdateDistributionConfigRequest(null, null, null, null, null, null, null, null, null, null, null, null);
