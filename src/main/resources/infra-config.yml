@@ -29,9 +29,15 @@ spring:
       jdbc-url: ${DATASOURCE___PAYMENTS_DB___URL:jdbc:mysql://dev.db.app.getvaas.com/payments_db?useUnicode=yes&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
       username: ${DATASOURCE___PAYMENTS_DB___USERNAME:SECRET}
       password: ${DATASOURCE___PAYMENTS_DB___PASSWORD:SECRET}
+    master-servicer-db:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: ${DATASOURCE___MASTER_SERVICER_DB___URL:jdbc:mysql://dev.db.app.getvaas.com/master_trust_servicer?useUnicode=yes&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+      username: ${DATASOURCE___MASTER_SERVICER_DB___USERNAME:SECRET}
+      password: ${DATASOURCE___MASTER_SERVICER_DB___PASSWORD:SECRET}
+  # Deshabilitado a propósito: con 2 DataSource beans y ninguno @Primary, el autoconfig de Boot
+  # no puede resolver a cuál aplicar. Flyway se corre manualmente por schema, ver FlywayConfig.
   flyway:
     enabled: false
-    locations: classpath:db/scripts/migration
   data:
     redis:
       host: ${REDIS___HOST:dev.smr.app.getvaas.com}
@@ -39,6 +45,9 @@ spring:
       ssl:
         enabled: ${REDIS___SSL___ENABLED:false}
         disable-peer-verification: ${REDIS___SSL___DISABLE_PEER_VERIFICATION:false}
+
+flyway:
+  enabled: ${FLYWAY_ENABLED:false}
 
 company-api:
   base-url: ${BASE_URL:http://localhost:8080/api}/company
@@ -53,7 +62,7 @@ vaas:
   security:
     enabled: ${VAAS_SECURITY_ENABLED:false}
     jwk:
-      domain: ${url}
+      domain: ${VAAS_SECURITY_JWK_DOMAIN:https://dev-nfj45tsl.us.auth0.com}
       endpoint:
         user-info: "/userinfo"
         claim:
@@ -75,4 +84,4 @@ distribution:
 
 infra:
   security:
-    internal-service-header: ${vaas_header}
+    internal-service-header: ${INFRA_SECURITY_INTERNAL_SERVICE_HEADER:YWd1YW50ZXJpdmVycGxhdGVjYXJham8hISE=}

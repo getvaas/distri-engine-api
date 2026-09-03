@@ -1,10 +1,10 @@
-package com.getvaas.distribution.engine.infrastructure.persistence.payments;
+package com.getvaas.distribution.engine.infrastructure.persistence.masterservicer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.DistributionEngineConfigEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ class DistributionConfigMapperTest {
                 .masterTrustId(3L)
                 .status(DistributionConfigStatus.DRAFT)
                 .configJson(objectMapper.writeValueAsString(payload))
-                .deleted(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2026, 1, 1, 0, 0))
                 .updatedAt(LocalDateTime.of(2026, 1, 2, 0, 0))
                 .createdBy("raul")
@@ -111,7 +111,7 @@ class DistributionConfigMapperTest {
         String jsonWithExtraField = "{\"country\":\"COP\",\"currency\":\"COP\",\"futureField\":{\"a\":1}}";
         var entity = DistributionEngineConfigEntity.builder()
                 .id("id-1").name("Test").companyId(1L).status(DistributionConfigStatus.DRAFT)
-                .configJson(jsonWithExtraField).deleted(false)
+                .configJson(jsonWithExtraField).active(true)
                 .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
                 .build();
 

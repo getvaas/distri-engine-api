@@ -1,4 +1,4 @@
-package com.getvaas.distribution.engine.infrastructure.persistence.payments.entity;
+package com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity;
 
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import jakarta.persistence.Column;
@@ -42,8 +42,9 @@ public class DistributionEngineConfigEntity {
     @Column(name = "config_json", nullable = false, columnDefinition = "LONGTEXT")
     private String configJson;
 
+    @Builder.Default
     @Column(nullable = false)
-    private boolean deleted;
+    private boolean active = true;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

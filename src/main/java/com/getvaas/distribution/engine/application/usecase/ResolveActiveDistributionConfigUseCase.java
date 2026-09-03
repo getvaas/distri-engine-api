@@ -2,8 +2,8 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigJPARepository;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +19,7 @@ public class ResolveActiveDistributionConfigUseCase {
     private final DistributionConfigMapper mapper;
 
     public DistributionConfig execute(Long companyId) {
-        var activeConfigs = repository.findByCompanyIdAndStatusAndDeletedFalse(
+        var activeConfigs = repository.findByCompanyIdAndStatusAndActiveTrue(
                 companyId, DistributionConfigStatus.ACTIVE);
 
         if (activeConfigs.isEmpty()) {
