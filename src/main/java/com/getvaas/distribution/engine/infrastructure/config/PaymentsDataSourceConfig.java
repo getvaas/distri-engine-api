@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.infrastructure.config;
 
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +32,8 @@ public class PaymentsDataSourceConfig {
 
     @Bean
     public LocalContainerEntityManagerFactoryBean paymentsEntityManagerFactory(
-            @Qualifier("paymentsDataSource") DataSource dataSource) {
+            @Qualifier("paymentsDataSource") DataSource dataSource,
+            @Value("${payments-db.hibernate.ddl-auto:none}") String ddlAuto) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
         em.setPackagesToScan(
@@ -40,9 +42,10 @@ public class PaymentsDataSourceConfig {
         );
         em.setPersistenceUnitName("payments");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
-        // nunca modificar el schema existente de payments
+        // "none" en runtime real (nunca modificar el schema existente de payments); los tests lo
+        // sobreescriben a "create-drop" via payments-db.hibernate.ddl-auto (H2 arranca vacío).
         em.setJpaPropertyMap(Map.of(
-                "hibernate.hbm2ddl.auto", "none",
+                "hibernate.hbm2ddl.auto", ddlAuto,
                 "hibernate.dialect", "org.hibernate.dialect.MySQLDialect",
                 "hibernate.temp.use_jdbc_metadata_defaults", "false"
         ));

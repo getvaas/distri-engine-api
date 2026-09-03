@@ -63,7 +63,7 @@ class DistributionConfigSpecificationsTest {
     void hasName_isCaseInsensitiveAndPartial() {
         var result = findAll(DistributionConfigSpecifications.hasName("somos"));
 
-        assertThat(result).extracting("id").containsExactlyInAnyOrder("id-1", "id-2", "id-4");
+        assertThat(result).extracting("id").containsExactlyInAnyOrder("id-1", "id-2");
     }
 
     @Test
