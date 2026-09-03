@@ -30,7 +30,8 @@ public class RunReadinessChecksUseCase {
                 ? readinessChecksConfig.checks().stream().map(ReadinessCheckSetting::type).toList()
                 : List.<ReadinessCheckType>of();
 
-        var context = new ReadinessCheckContext(config.companyId(), date, config.config().country());
+        var context = new ReadinessCheckContext(
+                config.companyId(), date, config.config().country(), config.masterTrustId(), config.config().pool());
         var results = readinessCheckRunner.run(enabledChecks, context);
         return ReadinessCheckOutcome.of(results);
     }

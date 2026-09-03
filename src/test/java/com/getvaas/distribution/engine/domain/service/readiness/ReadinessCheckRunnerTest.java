@@ -15,7 +15,7 @@ class ReadinessCheckRunnerTest {
     @Test
     void run_registeredCheck_evaluatesIt() {
         var runner = new ReadinessCheckRunner(List.of(new BusinessDayCheck()));
-        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 24), "Colombia (COL)");
+        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 24), "Colombia (COL)", null, null);
 
         var results = runner.run(List.of(ReadinessCheckType.BUSINESS_DAY), context);
 
@@ -26,7 +26,7 @@ class ReadinessCheckRunnerTest {
     @Test
     void run_unregisteredCheck_marksAsNotImplemented() {
         var runner = new ReadinessCheckRunner(List.of(new BusinessDayCheck()));
-        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 24), "Colombia (COL)");
+        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 24), "Colombia (COL)", null, null);
 
         var results = runner.run(List.of(ReadinessCheckType.PAYMENT_TAPE_LOADED), context);
 
@@ -38,7 +38,7 @@ class ReadinessCheckRunnerTest {
     @Test
     void run_mixOfRegisteredAndUnregistered_evaluatesEachIndependently() {
         var runner = new ReadinessCheckRunner(List.of(new BusinessDayCheck()));
-        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 22), "Colombia (COL)"); // sábado
+        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 22), "Colombia (COL)", null, null); // sábado
 
         var results = runner.run(
                 List.of(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckType.NO_DUPLICATE_DISTRIBUTION), context);
@@ -51,7 +51,7 @@ class ReadinessCheckRunnerTest {
     @Test
     void run_noEnabledChecks_returnsEmptyList() {
         var runner = new ReadinessCheckRunner(List.of(new BusinessDayCheck()));
-        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 24), "Colombia (COL)");
+        var context = new ReadinessCheckContext(3L, LocalDate.of(2026, 8, 24), "Colombia (COL)", null, null);
 
         var results = runner.run(List.of(), context);
 

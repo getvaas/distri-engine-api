@@ -48,7 +48,7 @@ class RunReadinessChecksUseCaseTest {
 
     private ReadinessChecksConfig readinessConfigWith(ReadinessCheckType type) {
         return new ReadinessChecksConfig(List.of(
-                new ReadinessCheckSetting(type, ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE)));
+                new ReadinessCheckSetting(type, ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE, null)));
     }
 
     @Test
