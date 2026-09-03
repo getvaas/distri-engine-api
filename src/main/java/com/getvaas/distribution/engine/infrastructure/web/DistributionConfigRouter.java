@@ -2,11 +2,14 @@ package com.getvaas.distribution.engine.infrastructure.web;
 
 import com.getvaas.distribution.engine.application.usecase.CreateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.GetDistributionConfigUseCase;
+import com.getvaas.distribution.engine.application.usecase.ListDistributionConfigsUseCase;
 import com.getvaas.distribution.engine.application.usecase.ResolveActiveDistributionConfigUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigStatusUseCase;
 import com.getvaas.distribution.engine.application.usecase.UpdateDistributionConfigUseCase;
 import com.getvaas.distribution.engine.infrastructure.web.dto.CreateDistributionConfigRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfigListResponse;
 import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionConfigResponse;
+import com.getvaas.distribution.engine.infrastructure.web.dto.ListDistributionConfigsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigStatusRequest;
 import com.getvaas.security.annotation.VaasSecurity;
@@ -33,11 +36,24 @@ public class DistributionConfigRouter {
     private final UpdateDistributionConfigUseCase updateDistributionConfigUseCase;
     private final UpdateDistributionConfigStatusUseCase updateDistributionConfigStatusUseCase;
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
+    private final ListDistributionConfigsUseCase listDistributionConfigsUseCase;
 
     @VaasSecurity
     @GetMapping("/active")
     public DistributionConfigResponse getActive(@RequestParam Long companyId) {
         return DistributionConfigResponse.from(resolveActiveDistributionConfigUseCase.execute(companyId));
+    }
+
+    @VaasSecurity
+    @GetMapping
+    public DistributionConfigListResponse list(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long masterTrustId,
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        var request = new ListDistributionConfigsRequest(name, masterTrustId, companyId, page, size);
+        return DistributionConfigListResponse.from(listDistributionConfigsUseCase.execute(request));
     }
 
     @VaasSecurity
