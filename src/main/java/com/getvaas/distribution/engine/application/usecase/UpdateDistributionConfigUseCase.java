@@ -2,8 +2,8 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigJPARepository;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -35,7 +35,7 @@ public class UpdateDistributionConfigUseCase {
     private final VirtualColumnsConfigBuilder virtualColumnsConfigBuilder;
 
     public DistributionConfig execute(String id, UpdateDistributionConfigRequest request) {
-        var entity = repository.findByIdAndDeletedFalse(id)
+        var entity = repository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new DistributionConfigNotFoundException(id));
         var existing = mapper.toDomain(entity);
 

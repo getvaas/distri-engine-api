@@ -3,9 +3,9 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigJPARepository;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.DistributionEngineConfigEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,7 +37,7 @@ class ResolveActiveDistributionConfigUseCaseTest {
                 new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
 
-        when(repository.findByCompanyIdAndStatusAndDeletedFalse(3L, DistributionConfigStatus.ACTIVE))
+        when(repository.findByCompanyIdAndStatusAndActiveTrue(3L, DistributionConfigStatus.ACTIVE))
                 .thenReturn(List.of(entity));
         when(mapper.toDomain(entity)).thenReturn(domain);
 
@@ -48,7 +48,7 @@ class ResolveActiveDistributionConfigUseCaseTest {
 
     @Test
     void execute_noActiveConfig_throwsNoActiveDistributionConfigException() {
-        when(repository.findByCompanyIdAndStatusAndDeletedFalse(3L, DistributionConfigStatus.ACTIVE))
+        when(repository.findByCompanyIdAndStatusAndActiveTrue(3L, DistributionConfigStatus.ACTIVE))
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> useCase.execute(3L))
@@ -62,7 +62,7 @@ class ResolveActiveDistributionConfigUseCaseTest {
         var second = DistributionEngineConfigEntity.builder().id("id-2").companyId(3L)
                 .status(DistributionConfigStatus.ACTIVE).build();
 
-        when(repository.findByCompanyIdAndStatusAndDeletedFalse(3L, DistributionConfigStatus.ACTIVE))
+        when(repository.findByCompanyIdAndStatusAndActiveTrue(3L, DistributionConfigStatus.ACTIVE))
                 .thenReturn(List.of(first, second));
 
         assertThatThrownBy(() -> useCase.execute(3L))

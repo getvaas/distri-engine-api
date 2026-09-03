@@ -2,8 +2,8 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigJPARepository;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigMapper;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigStatusRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ public class UpdateDistributionConfigStatusUseCase {
     private final DistributionConfigMapper mapper;
 
     public DistributionConfig execute(String id, UpdateDistributionConfigStatusRequest request) {
-        var entity = repository.findByIdAndDeletedFalse(id)
+        var entity = repository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new DistributionConfigNotFoundException(id));
 
         var status = request.status();
@@ -40,7 +40,7 @@ public class UpdateDistributionConfigStatusUseCase {
         var now = LocalDateTime.now();
 
         if (status == DistributionConfigStatus.ACTIVE) {
-            var currentlyActive = repository.findByCompanyIdAndStatusAndDeletedFalse(
+            var currentlyActive = repository.findByCompanyIdAndStatusAndActiveTrue(
                     entity.getCompanyId(), DistributionConfigStatus.ACTIVE);
             for (var sibling : currentlyActive) {
                 if (!sibling.getId().equals(id)) {

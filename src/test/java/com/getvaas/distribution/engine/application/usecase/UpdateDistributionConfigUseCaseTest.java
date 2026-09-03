@@ -6,9 +6,9 @@ import com.getvaas.distribution.engine.domain.model.PoolConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentTapePoolConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.PoolStrategyType;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigJPARepository;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.DistributionEngineConfigEntity;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateVirtualColumnsRequest;
@@ -57,7 +57,7 @@ class UpdateDistributionConfigUseCaseTest {
         var existingDomain = new DistributionConfig("id-1", "Old", 3L, null,
                 DistributionConfigStatus.DRAFT, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
-        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+        when(repository.findByIdAndActiveTrue("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(existingDomain);
         lenient().when(repository.save(entity)).thenReturn(entity);
     }
@@ -83,7 +83,7 @@ class UpdateDistributionConfigUseCaseTest {
         var request = new UpdateDistributionConfigRequest("New Name", 3L, null, null,
                 null, null, null, null, null, null, null, null);
 
-        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+        when(repository.findByIdAndActiveTrue("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(existingDomain, savedDomain);
         when(repository.save(entity)).thenReturn(entity);
 
@@ -112,7 +112,7 @@ class UpdateDistributionConfigUseCaseTest {
 
     @Test
     void execute_missingId_throwsDistributionConfigNotFoundException() {
-        when(repository.findByIdAndDeletedFalse("missing")).thenReturn(Optional.empty());
+        when(repository.findByIdAndActiveTrue("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute("missing", EMPTY_REQUEST))
                 .isInstanceOf(DistributionConfigNotFoundException.class);

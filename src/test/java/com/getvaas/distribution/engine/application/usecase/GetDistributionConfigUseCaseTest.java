@@ -3,9 +3,9 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigJPARepository;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.DistributionConfigMapper;
-import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.DistributionEngineConfigEntity;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigJPARepository;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.DistributionConfigMapper;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.DistributionEngineConfigEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,7 +38,7 @@ class GetDistributionConfigUseCaseTest {
                 LocalDateTime.now(), LocalDateTime.now(), null, null
         );
 
-        when(repository.findByIdAndDeletedFalse("id-1")).thenReturn(Optional.of(entity));
+        when(repository.findByIdAndActiveTrue("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(domain);
 
         var result = useCase.execute("id-1");
@@ -48,7 +48,7 @@ class GetDistributionConfigUseCaseTest {
 
     @Test
     void execute_missingId_throwsDistributionConfigNotFoundException() {
-        when(repository.findByIdAndDeletedFalse("missing")).thenReturn(Optional.empty());
+        when(repository.findByIdAndActiveTrue("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute("missing"))
                 .isInstanceOf(DistributionConfigNotFoundException.class);

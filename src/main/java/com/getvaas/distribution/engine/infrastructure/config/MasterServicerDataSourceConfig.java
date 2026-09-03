@@ -1,0 +1,56 @@
+package com.getvaas.distribution.engine.infrastructure.config;
+
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.Map;
+
+@Configuration
+@EnableJpaRepositories(
+        basePackages = "com.getvaas.distribution.engine.infrastructure.persistence.masterservicer",
+        entityManagerFactoryRef = "masterServicerEntityManagerFactory",
+        transactionManagerRef = "masterServicerTransactionManager"
+)
+public class MasterServicerDataSourceConfig {
+
+    @Bean
+    @ConfigurationProperties("spring.datasource.master-servicer-db")
+    public DataSource masterServicerDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean masterServicerEntityManagerFactory(
+            @Qualifier("masterServicerDataSource") DataSource dataSource) {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(dataSource);
+        em.setPackagesToScan(
+                "com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity",
+                "com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.converter"
+        );
+        em.setPersistenceUnitName("masterServicer");
+        em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+        em.setJpaPropertyMap(Map.of(
+                "hibernate.hbm2ddl.auto", "none",
+                "hibernate.dialect", "org.hibernate.dialect.MySQLDialect",
+                "hibernate.temp.use_jdbc_metadata_defaults", "false"
+        ));
+        return em;
+    }
+
+    @Bean
+    public PlatformTransactionManager masterServicerTransactionManager(
+            @Qualifier("masterServicerEntityManagerFactory") EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+}
