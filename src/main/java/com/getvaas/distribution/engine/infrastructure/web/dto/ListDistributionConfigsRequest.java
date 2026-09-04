@@ -5,5 +5,7 @@ public record ListDistributionConfigsRequest(
         Long masterTrustId,
         Long companyId,
         int page,
-        int size
+        int size,
+        String sortBy,
+        String sortDirection
 ) {}
