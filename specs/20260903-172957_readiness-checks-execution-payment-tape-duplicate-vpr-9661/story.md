@@ -1,7 +1,7 @@
 **Created at**: 2026-09-03
-**Status**: In Progress
+**Status**: Done
 **Original input**: @original_request.md
-**Plan implemented**: —
+**Plan implemented**: @plan.md
 
 # Story: Implementar los checks de Readiness pendientes (payment tape cargado, sin duplicados)
 
@@ -14,12 +14,12 @@ deal que los habilite en su config no obtiene ninguna validación real antes de 
 motor "deja pasar" precondiciones que el negocio espera que se chequeen de verdad.
 
 ### Acceptance Criteria
-- [ ] **Given** una `DistributionConfig` con `pool.strategy = PAYMENT_TAPE` y al menos un payment tape sin distribuir dentro de la ventana configurada, **When** corre `PaymentTapeLoadedCheck`, **Then** el resultado es `PASSED`.
-- [ ] **Given** la misma config pero sin ningún payment tape candidato en la ventana, **When** corre el check, **Then** el resultado es `FAILED`.
-- [ ] **Given** una `DistributionConfig` con `pool.strategy = ACCOUNT_BALANCE` o `DATA_SOURCE_AGGREGATION`, **When** corre `PaymentTapeLoadedCheck`, **Then** el resultado es `PASSED` automáticamente, sin consultar payment tapes.
-- [ ] **Given** el check `NO_DUPLICATE_DISTRIBUTION` habilitado para un deal, **When** ya existe una fila en `master_trust_servicer.distribution` con ese `masterTrustId`, `active=1` y `distribution_date` (por fecha calendario) igual a la fecha evaluada, **Then** el resultado es `FAILED`.
-- [ ] **Given** el mismo escenario pero sin ninguna fila así (o con `active` nulo/0), **When** corre el check, **Then** el resultado es `PASSED`.
-- [ ] **Given** el schema de `readinessChecks`, **When** se persiste un `ReadinessCheckSetting` de tipo `BUSINESS_DAY`, **Then** admite un campo nuevo `forceRunOnNonBusinessDay` (booleano, opcional) que se guarda y se lee correctamente, sin que `BusinessDayCheck` cambie su comportamiento actual (sigue bloqueando en fin de semana sin importar este campo).
+- [x] **Given** una `DistributionConfig` con `pool.strategy = PAYMENT_TAPE` y al menos un payment tape sin distribuir dentro de la ventana configurada, **When** corre `PaymentTapeLoadedCheck`, **Then** el resultado es `PASSED`.
+- [x] **Given** la misma config pero sin ningún payment tape candidato en la ventana, **When** corre el check, **Then** el resultado es `FAILED`.
+- [x] **Given** una `DistributionConfig` con `pool.strategy = ACCOUNT_BALANCE` o `DATA_SOURCE_AGGREGATION`, **When** corre `PaymentTapeLoadedCheck`, **Then** el resultado es `PASSED` automáticamente, sin consultar payment tapes.
+- [x] **Given** el check `NO_DUPLICATE_DISTRIBUTION` habilitado para un deal, **When** ya existe una fila en `master_trust_servicer.distribution` con ese `masterTrustId`, `active=1` y `distribution_date` (por fecha calendario) igual a la fecha evaluada, **Then** el resultado es `FAILED`.
+- [x] **Given** el mismo escenario pero sin ninguna fila así (o con `active` nulo/0), **When** corre el check, **Then** el resultado es `PASSED`.
+- [x] **Given** el schema de `readinessChecks`, **When** se persiste un `ReadinessCheckSetting` de tipo `BUSINESS_DAY`, **Then** admite un campo nuevo `forceRunOnNonBusinessDay` (booleano, opcional) que se guarda y se lee correctamente, sin que `BusinessDayCheck` cambie su comportamiento actual (sigue bloqueando en fin de semana sin importar este campo).
 
 ### Additional Context
 - Jira: VPR-9661 — continuación de `specs/20260821-154114_readiness-checks-engine-business-day-vpr-9661` (Done: motor + `BusinessDayCheck`).
@@ -27,3 +27,4 @@ motor "deja pasar" precondiciones que el negocio espera que se chequeen de verda
 - La tabla `master_trust_servicer.distribution` es propiedad de `master-trust-servicer-api` — se mapea de solo lectura (mismo criterio que `payment_tape` en `payments_db`: nunca migrarla ni alterarla desde este repo).
 - `forceRunOnNonBusinessDay` es un campo reservado — su comportamiento real (forzar distribución en día no hábil) queda fuera de alcance, para un ticket futuro.
 - Notificaciones al fallar un check y calendario de feriados en `BusinessDayCheck` siguen fuera de alcance (decisiones abiertas del ticket original, sin resolver).
+- **Agregado tras revisión**: `masterTrustId` nulo en `NoDuplicateDistributionCheck` ahora es `FAILED` (no `PASSED`) — una config sin master trust asociado no puede afirmar que no hay duplicados. Además, `RunReadinessChecksUseCase` ahora rechaza correr sobre cualquier config que no esté `ACTIVE` (`DistributionConfigNotActiveException`) — no se permite ejecutar precondiciones ni, presumiblemente, el resto del pipeline sobre una config no verificada/activada.
