@@ -1,5 +1,5 @@
 **Created at**: 2026-09-03
-**Status**: Draft
+**Status**: Done
 **Based on story**: @story.md
 
 # Plan: Listar distribution configs con filtros de nombre, master trust y company
@@ -29,19 +29,24 @@ Exponer `GET /configs` con filtros opcionales y combinables (`name` parcial, `ma
 ### Phases
 
 #### Phase 1: Repositorio y Specifications
-- [ ] `DistributionConfigJPARepository` extiende también `JpaSpecificationExecutor<DistributionEngineConfigEntity>`.
-- [ ] Crear `DistributionConfigSpecifications` con las 4 specs (`hasName` LIKE case-insensitive, `hasMasterTrustId`, `hasCompanyId`, `isActive`), cada una null-safe (filtro ausente → `Specification.where(null)`/no-op).
-- [ ] `DistributionConfigSpecificationsTest` (`@DataJpaTest`, H2): seedea 3-4 entities con distintos `name`/`masterTrustId`/`companyId`/`active`, verifica cada spec sola y combinaciones (AND), y que `active=false` nunca aparece.
+- [x] `DistributionConfigJPARepository` extiende también `JpaSpecificationExecutor<DistributionEngineConfigEntity>`.
+- [x] Crear `DistributionConfigSpecifications` con las 4 specs (`hasName` LIKE case-insensitive, `hasMasterTrustId`, `hasCompanyId`, `isActive`), cada una null-safe (filtro ausente → `Specification.where(null)`/no-op).
+- [x] `DistributionConfigSpecificationsTest` (`@DataJpaTest`, H2): seedea 3-4 entities con distintos `name`/`masterTrustId`/`companyId`/`active`, verifica cada spec sola y combinaciones (AND), y que `active=false` nunca aparece.
 
 #### Phase 2: Use case y DTOs
-- [ ] `ListDistributionConfigsRequest(String name, Long masterTrustId, Long companyId, int page, int size)` en `infrastructure/web/dto`.
-- [ ] `DistributionConfigListResponse(List<DistributionConfigResponse> items, long totalElements, int totalPages, int page, int size)` con `static from(Page<DistributionConfig>)`.
-- [ ] `ListDistributionConfigsUseCase.execute(ListDistributionConfigsRequest) -> Page<DistributionConfig>`: arma `Pageable` (`PageRequest.of(page, size)`), combina las specs presentes, llama `repository.findAll(spec, pageable)`, mapea cada entity a domain vía `DistributionConfigMapper.toDomain`.
-- [ ] `ListDistributionConfigsUseCaseTest` (Mockito): request sin filtros devuelve todas (activas); con filtros combinados delega correctamente; pagina bien (verifica `Pageable` armado).
+- [x] `ListDistributionConfigsRequest(String name, Long masterTrustId, Long companyId, int page, int size)` en `infrastructure/web/dto`.
+- [x] `DistributionConfigListResponse(List<DistributionConfigResponse> items, long totalElements, int totalPages, int page, int size)` con `static from(Page<DistributionConfig>)`.
+- [x] `ListDistributionConfigsUseCase.execute(ListDistributionConfigsRequest) -> Page<DistributionConfig>`: arma `Pageable` (`PageRequest.of(page, size)`), combina las specs presentes, llama `repository.findAll(spec, pageable)`, mapea cada entity a domain vía `DistributionConfigMapper.toDomain`.
+- [x] `ListDistributionConfigsUseCaseTest` (Mockito): request sin filtros devuelve todas (activas); con filtros combinados delega correctamente; pagina bien (verifica `Pageable` armado).
 
 #### Phase 3: Router y docs
-- [ ] `GET /configs` en `DistributionConfigRouter`, con `@RequestParam` opcionales y defaults `page=0`, `size=20`.
-- [ ] Actualizar `docs/architecture/distribution-config-schema.md` si corresponde (nueva entrada en la tabla de endpoints) — evaluado: ese doc es específicamente sobre la forma de `config_json` (Pista A), no un catálogo general de endpoints; no se actualiza acá.
+- [x] `GET /configs` en `DistributionConfigRouter`, con `@RequestParam` opcionales y defaults `page=0`, `size=20`.
+- [x] Actualizar `docs/architecture/distribution-config-schema.md` si corresponde (nueva entrada en la tabla de endpoints) — evaluado: ese doc es específicamente sobre la forma de `config_json` (Pista A), no un catálogo general de endpoints; no se actualiza acá.
+
+#### Phase 4: Sort (agregado tras revisión, fuera del plan original)
+- [x] `ListDistributionConfigsRequest` gana `sortBy`/`sortDirection`; `ListDistributionConfigsUseCase` arma el `Sort` con lista blanca (`name`/`masterTrustId`/`companyId`) — valor fuera de la lista o dirección inválida lanza `InvalidDistributionConfigException` (400), nunca deja pasar un nombre de propiedad sin validar a `Sort.by`.
+- [x] `GET /configs` expone `sortBy`/`sortDirection` como `@RequestParam` opcionales.
+- [x] `ListDistributionConfigsUseCaseTest`: default (name asc), sort explícito con dirección, `sortBy`/`sortDirection` inválidos lanzan excepción.
 
 ### Next Step
-Las 3 fases están implementadas en el working tree (rama `feature/VPR-9745-list-distribution-configs-with-filters`) y compilan limpio (`./gradlew compileJava compileTestJava`). Ningún checkbox se marca `[x]` todavía: `./scripts/run-tests.sh` falló por un 401 al resolver `com.getvaas:security:v1.0.4` desde GitHub Packages dentro del contenedor Docker — el PAT en `~/.gradle/gradle.properties` parece vencido, no es un problema de este código. Próximo paso: renovar el token, correr `./scripts/run-tests.sh` (primera vez que corre un `@DataJpaTest` en este repo, confirmar que el context de Spring con datasource dual arranca bien), y recién ahí marcar las fases como completas.
+Las 4 fases están implementadas y verificadas con una corrida real de tests en verde (`./scripts/run-tests.sh`, confirmado por el usuario). Ver `resume.md`.

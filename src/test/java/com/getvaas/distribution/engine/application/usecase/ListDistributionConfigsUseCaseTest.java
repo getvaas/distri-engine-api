@@ -17,12 +17,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,7 +66,7 @@ class ListDistributionConfigsUseCaseTest {
         when(mapper.toDomain(entities.get(0))).thenReturn(domain("id-1"));
         when(mapper.toDomain(entities.get(1))).thenReturn(domain("id-2"));
 
-        var request = new ListDistributionConfigsRequest(null, null, null, 0, 20);
+        var request = new ListDistributionConfigsRequest(null, null, null, 0, 20, null, null);
         Page<DistributionConfig> result = useCase.execute(request);
 
         assertThat(result.getContent()).extracting(DistributionConfig::id).containsExactly("id-1", "id-2");
@@ -76,7 +78,7 @@ class ListDistributionConfigsUseCaseTest {
     void execute_buildsPageableFromRequest() {
         mockRepositoryPage(new PageImpl<>(List.of()));
 
-        var request = new ListDistributionConfigsRequest(null, null, null, 2, 10);
+        var request = new ListDistributionConfigsRequest(null, null, null, 2, 10, null, null);
         useCase.execute(request);
 
         var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
@@ -89,10 +91,56 @@ class ListDistributionConfigsUseCaseTest {
     void execute_emptyResult_returnsEmptyPage() {
         mockRepositoryPage(new PageImpl<>(List.of()));
 
-        var request = new ListDistributionConfigsRequest("nothing matches", null, null, 0, 20);
+        var request = new ListDistributionConfigsRequest("nothing matches", null, null, 0, 20, null, null);
         Page<DistributionConfig> result = useCase.execute(request);
 
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void execute_noSortRequested_defaultsToNameAscending() {
+        mockRepositoryPage(new PageImpl<>(List.of()));
+
+        var request = new ListDistributionConfigsRequest(null, null, null, 0, 20, null, null);
+        useCase.execute(request);
+
+        var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(any(Specification.class), pageableCaptor.capture());
+        var order = pageableCaptor.getValue().getSort().getOrderFor("name");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.ASC);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void execute_sortByMasterTrustIdDescending_isHonored() {
+        mockRepositoryPage(new PageImpl<>(List.of()));
+
+        var request = new ListDistributionConfigsRequest(null, null, null, 0, 20, "masterTrustId", "desc");
+        useCase.execute(request);
+
+        var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(any(Specification.class), pageableCaptor.capture());
+        var order = pageableCaptor.getValue().getSort().getOrderFor("masterTrustId");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+    }
+
+    @Test
+    void execute_invalidSortBy_throws() {
+        var request = new ListDistributionConfigsRequest(null, null, null, 0, 20, "unknownField", null);
+
+        assertThatThrownBy(() -> useCase.execute(request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_invalidSortDirection_throws() {
+        var request = new ListDistributionConfigsRequest(null, null, null, 0, 20, "name", "sideways");
+
+        assertThatThrownBy(() -> useCase.execute(request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
     }
 }

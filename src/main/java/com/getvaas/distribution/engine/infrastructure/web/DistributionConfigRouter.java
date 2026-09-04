@@ -51,8 +51,10 @@ public class DistributionConfigRouter {
             @RequestParam(required = false) Long masterTrustId,
             @RequestParam(required = false) Long companyId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        var request = new ListDistributionConfigsRequest(name, masterTrustId, companyId, page, size);
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection) {
+        var request = new ListDistributionConfigsRequest(name, masterTrustId, companyId, page, size, sortBy, sortDirection);
         return DistributionConfigListResponse.from(listDistributionConfigsUseCase.execute(request));
     }
 
