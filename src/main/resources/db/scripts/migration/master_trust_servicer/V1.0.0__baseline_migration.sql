@@ -10,5 +10,6 @@ CREATE TABLE distribution_engine_config (
     updated_at DATETIME NOT NULL,
     created_by VARCHAR(100) NULL,
     updated_by VARCHAR(100) NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    KEY idx_distribution_engine_config_company_status (company_id, status, active)
 );
