@@ -1,5 +1,6 @@
 package com.getvaas.distribution.engine.infrastructure.web;
 
+import com.getvaas.distribution.engine.application.usecase.DistributionConfigNotActiveException;
 import com.getvaas.distribution.engine.application.usecase.DistributionConfigNotFoundException;
 import com.getvaas.distribution.engine.application.usecase.InvalidDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
@@ -34,6 +35,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MultipleActiveDistributionConfigException.class)
     public ProblemDetail handleMultipleActiveDistributionConfig(MultipleActiveDistributionConfigException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(DistributionConfigNotActiveException.class)
+    public ProblemDetail handleDistributionConfigNotActive(DistributionConfigNotActiveException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

@@ -52,12 +52,12 @@ class NoDuplicateDistributionCheckTest {
     }
 
     @Test
-    void evaluate_nullMasterTrustId_passesWithoutQueryingRepository() {
+    void evaluate_nullMasterTrustId_failsWithoutQueryingRepository() {
         var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", null, null);
 
         var result = check.evaluate(context);
 
-        assertThat(result.status()).isEqualTo(ReadinessCheckStatus.PASSED);
+        assertThat(result.status()).isEqualTo(ReadinessCheckStatus.FAILED);
         verifyNoInteractions(masterServicerDistributionJPARepository);
     }
 }
