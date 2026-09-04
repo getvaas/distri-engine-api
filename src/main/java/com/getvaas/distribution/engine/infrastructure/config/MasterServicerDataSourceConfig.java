@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.infrastructure.config;
 
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +32,8 @@ public class MasterServicerDataSourceConfig {
 
     @Bean
     public LocalContainerEntityManagerFactoryBean masterServicerEntityManagerFactory(
-            @Qualifier("masterServicerDataSource") DataSource dataSource) {
+            @Qualifier("masterServicerDataSource") DataSource dataSource,
+            @Value("${master-servicer-db.hibernate.ddl-auto:none}") String ddlAuto) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
         em.setPackagesToScan(
@@ -40,8 +42,11 @@ public class MasterServicerDataSourceConfig {
         );
         em.setPersistenceUnitName("masterServicer");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+        // "none" en runtime real (nunca auto-crear/alterar el schema de master_trust_servicer);
+        // los tests lo sobreescriben a "create-drop" via master-servicer-db.hibernate.ddl-auto,
+        // porque H2 arranca vacío y necesita que Hibernate cree las tablas.
         em.setJpaPropertyMap(Map.of(
-                "hibernate.hbm2ddl.auto", "none",
+                "hibernate.hbm2ddl.auto", ddlAuto,
                 "hibernate.dialect", "org.hibernate.dialect.MySQLDialect",
                 "hibernate.temp.use_jdbc_metadata_defaults", "false"
         ));

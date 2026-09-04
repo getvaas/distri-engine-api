@@ -7,5 +7,6 @@ import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckType;
 public record ReadinessCheckSettingRequest(
         ReadinessCheckType type,
         ReadinessCheckFailureAction failureAction,
-        ReadinessCheckRetry retry
+        ReadinessCheckRetry retry,
+        Boolean forceRunOnNonBusinessDay
 ) {}

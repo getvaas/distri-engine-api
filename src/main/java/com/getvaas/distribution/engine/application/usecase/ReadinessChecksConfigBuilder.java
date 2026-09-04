@@ -33,7 +33,7 @@ public class ReadinessChecksConfigBuilder {
         var settingRequests = request.checks();
         if (settingRequests == null || settingRequests.isEmpty()) {
             var defaults = DEFAULT_ENABLED_CHECK_TYPES.stream()
-                    .map(type -> new ReadinessCheckSetting(type, DEFAULT_FAILURE_ACTION, DEFAULT_RETRY))
+                    .map(type -> new ReadinessCheckSetting(type, DEFAULT_FAILURE_ACTION, DEFAULT_RETRY, null))
                     .toList();
             return new ReadinessChecksConfig(defaults);
         }
@@ -59,6 +59,7 @@ public class ReadinessChecksConfigBuilder {
         var failureAction = settingRequest.failureAction() != null ? settingRequest.failureAction() : DEFAULT_FAILURE_ACTION;
         var retry = settingRequest.retry() != null ? settingRequest.retry() : DEFAULT_RETRY;
 
-        return new ReadinessCheckSetting(settingRequest.type(), failureAction, retry);
+        return new ReadinessCheckSetting(
+                settingRequest.type(), failureAction, retry, settingRequest.forceRunOnNonBusinessDay());
     }
 }

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,15 +41,19 @@ class RunReadinessChecksUseCaseTest {
     }
 
     private DistributionConfig configWith(ReadinessChecksConfig readinessChecksConfig) {
+        return configWith(readinessChecksConfig, DistributionConfigStatus.ACTIVE);
+    }
+
+    private DistributionConfig configWith(ReadinessChecksConfig readinessChecksConfig, DistributionConfigStatus status) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
                 null, null, null, null, null, readinessChecksConfig, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null,
-                DistributionConfigStatus.ACTIVE, payload, LocalDateTime.now(), LocalDateTime.now(), null, null);
+                status, payload, LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
 
     private ReadinessChecksConfig readinessConfigWith(ReadinessCheckType type) {
         return new ReadinessChecksConfig(List.of(
-                new ReadinessCheckSetting(type, ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE)));
+                new ReadinessCheckSetting(type, ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE, null)));
     }
 
     @Test
@@ -81,5 +86,14 @@ class RunReadinessChecksUseCaseTest {
 
         assertThat(outcome.readyToDistribute()).isTrue();
         assertThat(outcome.results().get(0).status().name()).isEqualTo("NOT_IMPLEMENTED");
+    }
+
+    @Test
+    void execute_configNotActive_throws() {
+        when(getDistributionConfigUseCase.execute("id-1"))
+                .thenReturn(configWith(readinessConfigWith(ReadinessCheckType.BUSINESS_DAY), DistributionConfigStatus.DRAFT));
+
+        assertThatThrownBy(() -> useCase.execute("id-1", LocalDate.of(2026, 8, 24)))
+                .isInstanceOf(DistributionConfigNotActiveException.class);
     }
 }

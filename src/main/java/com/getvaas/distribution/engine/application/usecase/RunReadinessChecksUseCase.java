@@ -3,6 +3,7 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckContext;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckOutcome;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckSetting;
+import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckType;
 import com.getvaas.distribution.engine.domain.service.readiness.ReadinessCheckRunner;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +26,17 @@ public class RunReadinessChecksUseCase {
 
     public ReadinessCheckOutcome execute(String id, LocalDate date) {
         var config = getDistributionConfigUseCase.execute(id);
+        if (config.status() != DistributionConfigStatus.ACTIVE) {
+            throw new DistributionConfigNotActiveException(id, config.status());
+        }
+
         var readinessChecksConfig = config.config().readinessChecks();
         var enabledChecks = readinessChecksConfig != null
                 ? readinessChecksConfig.checks().stream().map(ReadinessCheckSetting::type).toList()
                 : List.<ReadinessCheckType>of();
 
-        var context = new ReadinessCheckContext(config.companyId(), date, config.config().country());
+        var context = new ReadinessCheckContext(
+                config.companyId(), date, config.config().country(), config.masterTrustId(), config.config().pool());
         var results = readinessCheckRunner.run(enabledChecks, context);
         return ReadinessCheckOutcome.of(results);
     }

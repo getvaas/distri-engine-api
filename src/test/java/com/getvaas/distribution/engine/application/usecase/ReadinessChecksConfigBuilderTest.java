@@ -36,11 +36,11 @@ class ReadinessChecksConfigBuilderTest {
     void build_checksWithOwnFailureActionAndRetry_persistIndependently() {
         ReadinessChecksConfig config = builder.build(new UpdateReadinessChecksConfigRequest(List.of(
                 new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY,
-                        ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE),
+                        ReadinessCheckFailureAction.PAUSE_AND_ALERT, ReadinessCheckRetry.NEXT_CYCLE, null),
                 new ReadinessCheckSettingRequest(ReadinessCheckType.PAYMENT_TAPE_LOADED,
-                        ReadinessCheckFailureAction.DISTRIBUTE_PARTIALLY, ReadinessCheckRetry.NO),
+                        ReadinessCheckFailureAction.DISTRIBUTE_PARTIALLY, ReadinessCheckRetry.NO, null),
                 new ReadinessCheckSettingRequest(ReadinessCheckType.NO_DUPLICATE_DISTRIBUTION,
-                        ReadinessCheckFailureAction.SILENT_SKIP, ReadinessCheckRetry.IN_1_HOUR))));
+                        ReadinessCheckFailureAction.SILENT_SKIP, ReadinessCheckRetry.IN_1_HOUR, null))));
 
         assertThat(config.checks()).hasSize(3);
         var byType = config.checks().stream()
@@ -55,7 +55,7 @@ class ReadinessChecksConfigBuilderTest {
     @Test
     void build_checkWithoutFailureActionOrRetry_usesDefaultsForThatCheckOnly() {
         ReadinessChecksConfig config = builder.build(new UpdateReadinessChecksConfigRequest(List.of(
-                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, null, null))));
+                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, null, null, null))));
 
         assertThat(config.checks()).hasSize(1);
         assertThat(config.checks().get(0).failureAction()).isEqualTo(ReadinessCheckFailureAction.PAUSE_AND_ALERT);
@@ -65,7 +65,7 @@ class ReadinessChecksConfigBuilderTest {
     @Test
     void build_checkWithoutType_throwsInvalidDistributionConfigException() {
         var request = new UpdateReadinessChecksConfigRequest(List.of(
-                new ReadinessCheckSettingRequest(null, ReadinessCheckFailureAction.SILENT_SKIP, null)));
+                new ReadinessCheckSettingRequest(null, ReadinessCheckFailureAction.SILENT_SKIP, null, null)));
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -74,10 +74,18 @@ class ReadinessChecksConfigBuilderTest {
     @Test
     void build_duplicateCheckType_throwsInvalidDistributionConfigException() {
         var request = new UpdateReadinessChecksConfigRequest(List.of(
-                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, null, null),
-                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckFailureAction.SILENT_SKIP, null)));
+                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, null, null, null),
+                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckFailureAction.SILENT_SKIP, null, null)));
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void build_businessDayWithForceRunOnNonBusinessDay_persistsItWithoutValidatingOrUsingIt() {
+        ReadinessChecksConfig config = builder.build(new UpdateReadinessChecksConfigRequest(List.of(
+                new ReadinessCheckSettingRequest(ReadinessCheckType.BUSINESS_DAY, null, null, true))));
+
+        assertThat(config.checks().get(0).forceRunOnNonBusinessDay()).isTrue();
     }
 }
