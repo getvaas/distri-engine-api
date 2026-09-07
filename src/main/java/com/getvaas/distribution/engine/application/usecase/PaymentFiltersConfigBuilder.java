@@ -38,7 +38,8 @@ public class PaymentFiltersConfigBuilder {
     public PaymentFiltersConfig build(UpdatePaymentFiltersRequest request) {
         var accountingPayments = buildAccountingPaymentsConfig(request.accountingPayments());
         var gatewayFilters = buildGatewayFiltersConfig(request.gatewayFilters());
-        var conciliationRequirements = buildConciliationRequirementsConfig(request.conciliationRequirements());
+        var conciliationRequirements = buildConciliationRequirementsConfig(
+                request.conciliationRequirements(), request.conciliationTolerancePercentage());
         var dateTimeFilters = buildDateTimeFiltersConfig(request.dateTimeFilters());
         return new PaymentFiltersConfig(accountingPayments, gatewayFilters, conciliationRequirements, dateTimeFilters);
     }
@@ -83,16 +84,20 @@ public class PaymentFiltersConfigBuilder {
     }
 
     private ConciliationRequirementsConfig buildConciliationRequirementsConfig(
-            List<ConciliationRequirementGroupRequest> groupRequests) {
+            List<ConciliationRequirementGroupRequest> groupRequests, Integer tolerancePercentage) {
+        if (tolerancePercentage != null && (tolerancePercentage < 0 || tolerancePercentage > 100)) {
+            throw new InvalidDistributionConfigException("conciliationTolerancePercentage debe estar entre 0 y 100");
+        }
+
         if (groupRequests == null || groupRequests.isEmpty()) {
-            return new ConciliationRequirementsConfig(List.of());
+            return new ConciliationRequirementsConfig(List.of(), tolerancePercentage);
         }
 
         var groups = groupRequests.stream()
                 .map(this::buildConciliationRequirementGroup)
                 .toList();
 
-        return new ConciliationRequirementsConfig(groups);
+        return new ConciliationRequirementsConfig(groups, tolerancePercentage);
     }
 
     private ConciliationRequirementGroup buildConciliationRequirementGroup(ConciliationRequirementGroupRequest groupRequest) {

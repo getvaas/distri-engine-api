@@ -5,6 +5,7 @@ import com.getvaas.distribution.engine.application.usecase.DistributionConfigNot
 import com.getvaas.distribution.engine.application.usecase.InvalidDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedConciliationRuleException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +41,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DistributionConfigNotActiveException.class)
     public ProblemDetail handleDistributionConfigNotActive(DistributionConfigNotActiveException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedConciliationRuleException.class)
+    public ProblemDetail handleUnsupportedConciliationRule(UnsupportedConciliationRuleException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

@@ -6,5 +6,6 @@ public record UpdatePaymentFiltersRequest(
         AccountingPaymentsRequest accountingPayments,
         UpdateGatewayFiltersRequest gatewayFilters,
         List<ConciliationRequirementGroupRequest> conciliationRequirements,
+        Integer conciliationTolerancePercentage,
         List<DateTimeFilterRuleRequest> dateTimeFilters
 ) {}

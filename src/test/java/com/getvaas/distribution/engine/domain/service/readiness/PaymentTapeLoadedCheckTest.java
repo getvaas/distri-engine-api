@@ -38,7 +38,7 @@ class PaymentTapeLoadedCheckTest {
     private static final LocalDate DATE = LocalDate.of(2026, 8, 24);
 
     private ReadinessCheckContext contextWithPool(PoolConfig pool) {
-        return new ReadinessCheckContext(3L, DATE, "Colombia (COL)", 3L, pool);
+        return new ReadinessCheckContext(3L, DATE, "Colombia (COL)", 3L, pool, null);
     }
 
     @Test

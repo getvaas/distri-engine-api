@@ -14,9 +14,8 @@ import java.time.LocalDateTime;
 
 /**
  * Mapeo de <b>solo lectura</b> sobre {@code payment_tape} — la escribe {@code payment-data-extractor},
- * no este servicio. Mapea solo las 4 columnas que este ticket necesita (VPR-9662); se agregan más a
- * medida que otros tickets las requieran (Payment Filters, cálculo de monto, ownership, etc.), nunca de
- * más.
+ * no este servicio. Mapea solo las columnas que los tickets ya construidos necesitan; se agregan más a
+ * medida que otros tickets las requieran (ownership, etc.), nunca de más.
  * <p>
  * La tabla está {@code PARTITION BY RANGE (company_id)} — por eso {@code @IdClass}: obliga a pasar
  * {@code companyId} en cualquier acceso por id, para no poder generar (ni pedir por accidente) una
@@ -44,4 +43,10 @@ public class PaymentTapeEntity {
 
     @Column(name = "distribution_id")
     private String distributionId;
+
+    @Column(name = "payment_id")
+    private String paymentId;
+
+    @Column(name = "fund_transfer_id")
+    private String fundTransferId;
 }
