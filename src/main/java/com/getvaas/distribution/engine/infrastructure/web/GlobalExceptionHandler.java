@@ -5,6 +5,8 @@ import com.getvaas.distribution.engine.application.usecase.DistributionConfigNot
 import com.getvaas.distribution.engine.application.usecase.InvalidDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolAmountFieldException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolStrategyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +42,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DistributionConfigNotActiveException.class)
     public ProblemDetail handleDistributionConfigNotActive(DistributionConfigNotActiveException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedPoolStrategyException.class)
+    public ProblemDetail handleUnsupportedPoolStrategy(UnsupportedPoolStrategyException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedPoolAmountFieldException.class)
+    public ProblemDetail handleUnsupportedPoolAmountField(UnsupportedPoolAmountFieldException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

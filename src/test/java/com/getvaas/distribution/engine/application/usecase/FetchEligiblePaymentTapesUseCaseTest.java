@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,25 +28,29 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FetchCandidatePaymentTapesUseCaseTest {
+class FetchEligiblePaymentTapesUseCaseTest {
 
     @Mock
     private ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     @Mock
     private PaymentTapeJPARepository paymentTapeJPARepository;
 
-    private FetchCandidatePaymentTapesUseCase useCase;
+    private FetchEligiblePaymentTapesUseCase useCase;
 
     @BeforeEach
     void setUp() {
         // WorkingDaysCalculator real (sin dependencias externas) — solo mockeamos lo que toca datos.
-        useCase = new FetchCandidatePaymentTapesUseCase(
+        useCase = new FetchEligiblePaymentTapesUseCase(
                 resolveActiveDistributionConfigUseCase, new WorkingDaysCalculator(), paymentTapeJPARepository);
     }
 
     private DistributionConfig activeConfigWithDaysBack(Integer daysBack) {
+        return activeConfigWith(daysBack, "net_amount");
+    }
+
+    private DistributionConfig activeConfigWith(Integer daysBack, String amountField) {
         var poolConfig = daysBack != null
-                ? new PoolConfig(PoolStrategyType.PAYMENT_TAPE, new PaymentTapePoolConfig("net_amount", daysBack), null, null)
+                ? new PoolConfig(PoolStrategyType.PAYMENT_TAPE, new PaymentTapePoolConfig(amountField, daysBack), null, null)
                 : null;
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
                 poolConfig, null, null, null, null, null, null, null);
@@ -79,10 +84,11 @@ class FetchCandidatePaymentTapesUseCaseTest {
     }
 
     @Test
-    void execute_mapsEntitiesToDomainCandidates() {
+    void execute_mapsEntitiesToDomainEligibleTapes() {
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWithDaysBack(5));
         var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
-                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0)).build();
+                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0))
+                .netAmount(new BigDecimal("100.50")).build();
         when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
                 eq(3L), any(), any())).thenReturn(List.of(entity));
 
@@ -92,6 +98,33 @@ class FetchCandidatePaymentTapesUseCaseTest {
         assertThat(result.get(0).id()).isEqualTo("pt-1");
         assertThat(result.get(0).companyId()).isEqualTo(3L);
         assertThat(result.get(0).paymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 20, 10, 0));
+        assertThat(result.get(0).amount()).isEqualByComparingTo("100.50");
+    }
+
+    @Test
+    void execute_amountFieldGrossAmount_usesGrossAmountColumn() {
+        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(5, "gross_amount"));
+        var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
+                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0))
+                .netAmount(new BigDecimal("90.00")).grossAmount(new BigDecimal("100.00")).build();
+        when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
+                eq(3L), any(), any())).thenReturn(List.of(entity));
+
+        var result = useCase.execute(3L, LocalDate.of(2026, 8, 24));
+
+        assertThat(result.get(0).amount()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void execute_unsupportedAmountField_throws() {
+        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(5, "fee_amount"));
+        var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
+                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0)).build();
+        when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
+                eq(3L), any(), any())).thenReturn(List.of(entity));
+
+        assertThatThrownBy(() -> useCase.execute(3L, LocalDate.of(2026, 8, 24)))
+                .isInstanceOf(UnsupportedPoolAmountFieldException.class);
     }
 
     @Test

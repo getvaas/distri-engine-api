@@ -10,12 +10,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
  * Mapeo de <b>solo lectura</b> sobre {@code payment_tape} — la escribe {@code payment-data-extractor},
- * no este servicio. Mapea solo las 4 columnas que este ticket necesita (VPR-9662); se agregan más a
- * medida que otros tickets las requieran (Payment Filters, cálculo de monto, ownership, etc.), nunca de
+ * no este servicio. Mapea solo las columnas que los tickets ya construidos necesitan (VPR-9662); se
+ * agregan más a medida que otros tickets las requieran (Payment Filters, ownership, etc.), nunca de
  * más.
  * <p>
  * La tabla está {@code PARTITION BY RANGE (company_id)} — por eso {@code @IdClass}: obliga a pasar
@@ -44,4 +45,10 @@ public class PaymentTapeEntity {
 
     @Column(name = "distribution_id")
     private String distributionId;
+
+    @Column(name = "net_amount")
+    private BigDecimal netAmount;
+
+    @Column(name = "gross_amount")
+    private BigDecimal grossAmount;
 }
