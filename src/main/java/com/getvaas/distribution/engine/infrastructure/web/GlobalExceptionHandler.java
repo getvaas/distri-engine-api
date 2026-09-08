@@ -6,6 +6,8 @@ import com.getvaas.distribution.engine.application.usecase.InvalidDistributionCo
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedConciliationRuleException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolAmountFieldException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolStrategyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,6 +48,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnsupportedConciliationRuleException.class)
     public ProblemDetail handleUnsupportedConciliationRule(UnsupportedConciliationRuleException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedPoolStrategyException.class)
+    public ProblemDetail handleUnsupportedPoolStrategy(UnsupportedPoolStrategyException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedPoolAmountFieldException.class)
+    public ProblemDetail handleUnsupportedPoolAmountField(UnsupportedPoolAmountFieldException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

@@ -1,9 +1,11 @@
 package com.getvaas.distribution.engine.domain.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PaymentTapeCandidate(
+public record EligiblePaymentTape(
         String id,
         Long companyId,
-        LocalDateTime paymentDate
+        LocalDateTime paymentDate,
+        BigDecimal amount
 ) {}
