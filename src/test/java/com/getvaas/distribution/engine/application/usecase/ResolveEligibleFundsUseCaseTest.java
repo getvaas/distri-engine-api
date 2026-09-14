@@ -55,7 +55,7 @@ class ResolveEligibleFundsUseCaseTest {
     @Test
     void execute_supportedStrategy_delegatesToRegisteredResolver() {
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(configWithStrategy(PoolStrategyType.PAYMENT_TAPE));
-        var expected = List.of(new PoolFund("pt-1", new BigDecimal("100.00")));
+        var expected = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co"));
         var useCase = new ResolveEligibleFundsUseCase(
                 resolveActiveDistributionConfigUseCase, List.of(fakeResolver(PoolStrategyType.PAYMENT_TAPE, expected)));
 

@@ -7,5 +7,6 @@ public record EligiblePaymentTape(
         String id,
         Long companyId,
         LocalDateTime paymentDate,
-        BigDecimal amount
+        BigDecimal amount,
+        String owner
 ) {}

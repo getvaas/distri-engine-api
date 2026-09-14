@@ -6,6 +6,8 @@ import com.getvaas.distribution.engine.application.usecase.InvalidDistributionCo
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedConciliationRuleException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedOwnershipFieldException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedOwnershipSourceException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedPaymentFilterFieldException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolAmountFieldException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolStrategyException;
@@ -64,6 +66,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnsupportedPaymentFilterFieldException.class)
     public ProblemDetail handleUnsupportedPaymentFilterField(UnsupportedPaymentFilterFieldException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedOwnershipFieldException.class)
+    public ProblemDetail handleUnsupportedOwnershipField(UnsupportedOwnershipFieldException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedOwnershipSourceException.class)
+    public ProblemDetail handleUnsupportedOwnershipSource(UnsupportedOwnershipSourceException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

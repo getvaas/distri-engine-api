@@ -58,7 +58,7 @@ class RunDistributionUseCaseTest {
         var readiness = ReadinessCheckOutcome.of(List.of(
                 new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
-        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00")));
+        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co"));
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
 
         var result = useCase.execute(3L, DATE);
