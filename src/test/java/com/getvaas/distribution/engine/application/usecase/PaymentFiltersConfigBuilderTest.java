@@ -263,7 +263,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_dateTimeFilterDistributeByDateWithOperatorAndValue_persistsAsIs() {
         var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE,
-                DateTimeFilterOperator.IS_BEFORE, "today", null);
+                DateTimeFilterOperator.IS_BEFORE, "today", null, null, null);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         PaymentFiltersConfig saved = builder.build(request);
@@ -278,7 +278,7 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_dateTimeFilterDaysBackLimitWithMaxDays_persistsAsIs() {
-        var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, 3);
+        var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, 3, null, true);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         PaymentFiltersConfig saved = builder.build(request);
@@ -287,13 +287,35 @@ class PaymentFiltersConfigBuilderTest {
         assertThat(savedRule.gateway()).isEqualTo("EFECTY");
         assertThat(savedRule.ruleType()).isEqualTo(DateTimeFilterRuleType.DAYS_BACK_LIMIT);
         assertThat(savedRule.maxDays()).isEqualTo(3);
+        assertThat(savedRule.businessDays()).isTrue();
         assertThat(savedRule.operator()).isNull();
         assertThat(savedRule.value()).isNull();
     }
 
     @Test
+    void build_dateTimeFilterDistributeByDateTimeWithCutoffTime_persistsAsIs() {
+        var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE_TIME,
+                DateTimeFilterOperator.IS_BEFORE, "today", null, "17:00", null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
+
+        PaymentFiltersConfig saved = builder.build(request);
+
+        assertThat(saved.dateTimeFilters().rules().get(0).cutoffTime()).isEqualTo(java.time.LocalTime.of(17, 0));
+    }
+
+    @Test
+    void build_dateTimeFilterInvalidCutoffTime_throwsInvalidDistributionConfigException() {
+        var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE_TIME,
+                DateTimeFilterOperator.IS_BEFORE, "today", null, "not-a-time", null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
+
+        assertThatThrownBy(() -> builder.build(request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
     void build_dateTimeFilterDistributeByDateWithoutOperator_throwsInvalidDistributionConfigException() {
-        var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE_TIME, null, "today", null);
+        var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE_TIME, null, "today", null, null, null);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
@@ -302,7 +324,7 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_dateTimeFilterDistributeByDateWithoutValue_throwsInvalidDistributionConfigException() {
-        var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE, DateTimeFilterOperator.IS_AFTER, null, null);
+        var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE, DateTimeFilterOperator.IS_AFTER, null, null, null, null);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
@@ -311,7 +333,7 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_dateTimeFilterDaysBackLimitWithoutMaxDays_throwsInvalidDistributionConfigException() {
-        var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, null);
+        var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, null, null, null);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
@@ -320,7 +342,7 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_dateTimeFilterDaysBackLimitWithNonPositiveMaxDays_throwsInvalidDistributionConfigException() {
-        var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, 0);
+        var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, 0, null, null);
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))

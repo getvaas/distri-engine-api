@@ -39,9 +39,13 @@ class FetchEligiblePaymentTapesUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        // WorkingDaysCalculator real (sin dependencias externas) — solo mockeamos lo que toca datos.
+        // WorkingDaysCalculator/ApplyPaymentFiltersUseCase reales (sin dependencias externas) — solo
+        // mockeamos lo que toca datos. Los configs de este test no traen paymentFilters, así que el
+        // filtro es un no-op.
+        var workingDaysCalculator = new WorkingDaysCalculator();
         useCase = new FetchEligiblePaymentTapesUseCase(
-                resolveActiveDistributionConfigUseCase, new WorkingDaysCalculator(), paymentTapeJPARepository);
+                resolveActiveDistributionConfigUseCase, workingDaysCalculator, paymentTapeJPARepository,
+                new ApplyPaymentFiltersUseCase(workingDaysCalculator));
     }
 
     private DistributionConfig activeConfigWithDaysBack(Integer daysBack) {

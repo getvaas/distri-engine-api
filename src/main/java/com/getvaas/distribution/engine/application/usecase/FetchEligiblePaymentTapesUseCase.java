@@ -13,11 +13,10 @@ import java.util.List;
 
 /**
  * Bloque 2 del pipeline de ejecución (VPR-9662): trae los payment tapes elegibles — dentro de la
- * ventana de días hábiles configurada en Pool Strategy, todavía no distribuidos, con el monto ya
- * resuelto según {@code amountField} (VPR-9628). Pieza interna del motor de ejecución, consumida por
- * el orquestador (no expuesta por ningún endpoint — mismo criterio que {@link RunReadinessChecksUseCase}).
- * No aplica todavía Payment Filters (VPR-9631-9634) ni el gate de conciliación (VPR-9633) — esos se
- * agregan encima en tickets siguientes.
+ * ventana de días hábiles configurada en Pool Strategy, todavía no distribuidos, con Payment
+ * Filters (VPR-9664) y el gate de conciliación ya aplicados, y el monto resuelto según
+ * {@code amountField} (VPR-9628). Pieza interna del motor de ejecución, consumida por el
+ * orquestador (no expuesta por ningún endpoint — mismo criterio que {@link RunReadinessChecksUseCase}).
  */
 @Component
 @RequiredArgsConstructor
@@ -29,6 +28,7 @@ public class FetchEligiblePaymentTapesUseCase {
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final WorkingDaysCalculator workingDaysCalculator;
     private final PaymentTapeJPARepository paymentTapeJPARepository;
+    private final ApplyPaymentFiltersUseCase applyPaymentFiltersUseCase;
 
     public List<EligiblePaymentTape> execute(Long companyId, LocalDate date) {
         var config = resolveActiveDistributionConfigUseCase.execute(companyId);
@@ -50,8 +50,11 @@ public class FetchEligiblePaymentTapesUseCase {
         var entities = paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
                 companyId, fromDate.atStartOfDay(), date.atTime(23, 59, 59));
 
+        var filteredEntities = applyPaymentFiltersUseCase.execute(
+                config.config().paymentFilters(), entities, date, config.config().country());
+
         var resolvedAmountField = amountField;
-        return entities.stream()
+        return filteredEntities.stream()
                 .map(e -> new EligiblePaymentTape(e.getId(), e.getCompanyId(), e.getPaymentDate(),
                         resolveAmount(e, resolvedAmountField)))
                 .toList();

@@ -8,5 +8,7 @@ public record DateTimeFilterRuleRequest(
         DateTimeFilterRuleType ruleType,
         DateTimeFilterOperator operator,
         String value,
-        Integer maxDays
+        Integer maxDays,
+        String cutoffTime,
+        Boolean businessDays
 ) {}

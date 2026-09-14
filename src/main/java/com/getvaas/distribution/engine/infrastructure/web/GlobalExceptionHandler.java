@@ -6,6 +6,7 @@ import com.getvaas.distribution.engine.application.usecase.InvalidDistributionCo
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedConciliationRuleException;
+import com.getvaas.distribution.engine.application.usecase.UnsupportedPaymentFilterFieldException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolAmountFieldException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedPoolStrategyException;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnsupportedPoolAmountFieldException.class)
     public ProblemDetail handleUnsupportedPoolAmountField(UnsupportedPoolAmountFieldException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedPaymentFilterFieldException.class)
+    public ProblemDetail handleUnsupportedPaymentFilterField(UnsupportedPaymentFilterFieldException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }
