@@ -155,6 +155,18 @@ class FetchEligiblePaymentTapesUseCaseTest {
     }
 
     @Test
+    void execute_amountFieldNullOnSpecificTape_throws() {
+        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(5, "net_amount"));
+        var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
+                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0)).build(); // netAmount null
+        when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
+                eq(3L), any(), any())).thenReturn(List.of(entity));
+
+        assertThatThrownBy(() -> useCase.execute(3L, LocalDate.of(2026, 8, 24)))
+                .isInstanceOf(NullAmountFieldValueException.class);
+    }
+
+    @Test
     void execute_noActiveConfig_propagatesException() {
         when(resolveActiveDistributionConfigUseCase.execute(3L))
                 .thenThrow(new NoActiveDistributionConfigException(3L));
