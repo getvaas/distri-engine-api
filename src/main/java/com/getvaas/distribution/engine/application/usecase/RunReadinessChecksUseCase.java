@@ -35,8 +35,10 @@ public class RunReadinessChecksUseCase {
                 ? readinessChecksConfig.checks().stream().map(ReadinessCheckSetting::type).toList()
                 : List.<ReadinessCheckType>of();
 
+        var paymentFilters = config.config().paymentFilters();
         var context = new ReadinessCheckContext(
-                config.companyId(), date, config.config().country(), config.masterTrustId(), config.config().pool());
+                config.companyId(), date, config.config().country(), config.masterTrustId(), config.config().pool(),
+                paymentFilters != null ? paymentFilters.conciliationRequirements() : null);
         var results = readinessCheckRunner.run(enabledChecks, context);
         return ReadinessCheckOutcome.of(results);
     }

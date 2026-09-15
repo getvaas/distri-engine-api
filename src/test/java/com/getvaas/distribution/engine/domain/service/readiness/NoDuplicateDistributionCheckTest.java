@@ -28,7 +28,7 @@ class NoDuplicateDistributionCheckTest {
 
     @Test
     void evaluate_alreadyDistributedToday_fails() {
-        var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", 3L, null);
+        var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", 3L, null, null);
         when(masterServicerDistributionJPARepository
                 .existsByMasterTrustServicerIdAndActiveTrueAndDistributionDateBetween(any(), any(), any()))
                 .thenReturn(true);
@@ -41,7 +41,7 @@ class NoDuplicateDistributionCheckTest {
 
     @Test
     void evaluate_notDistributedYet_passes() {
-        var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", 3L, null);
+        var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", 3L, null, null);
         when(masterServicerDistributionJPARepository
                 .existsByMasterTrustServicerIdAndActiveTrueAndDistributionDateBetween(any(), any(), any()))
                 .thenReturn(false);
@@ -53,7 +53,7 @@ class NoDuplicateDistributionCheckTest {
 
     @Test
     void evaluate_nullMasterTrustId_failsWithoutQueryingRepository() {
-        var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", null, null);
+        var context = new ReadinessCheckContext(3L, DATE, "Colombia (COL)", null, null, null);
 
         var result = check.evaluate(context);
 

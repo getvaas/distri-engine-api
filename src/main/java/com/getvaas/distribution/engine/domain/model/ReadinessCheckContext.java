@@ -4,13 +4,15 @@ import java.time.LocalDate;
 
 /**
  * Datos disponibles para evaluar readiness checks. Crece a medida que se agreguen checks nuevos —
- * {@code masterTrustId} lo necesita {@code NoDuplicateDistributionCheck} (VPR-9661) y {@code pool}
- * lo necesita {@code PaymentTapeLoadedCheck} (VPR-9661).
+ * {@code masterTrustId} lo necesita {@code NoDuplicateDistributionCheck} (VPR-9661), {@code pool}
+ * lo necesita {@code PaymentTapeLoadedCheck} (VPR-9661), y {@code conciliationRequirements} lo
+ * necesita {@code ConciliationToleranceCheck} (VPR-9663).
  */
 public record ReadinessCheckContext(
         Long companyId,
         LocalDate date,
         String country,
         Long masterTrustId,
-        PoolConfig pool
+        PoolConfig pool,
+        ConciliationRequirementsConfig conciliationRequirements
 ) {}

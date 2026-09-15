@@ -39,7 +39,7 @@ class PaymentFiltersConfigBuilderTest {
         var request = new UpdatePaymentFiltersRequest(new AccountingPaymentsRequest(
                 true, false,
                 List.of(group(new PaymentFilterConditionRequest("payment_type", PaymentFilterOperator.EQ, "accounting")))),
-                null, null, null);
+                null, null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -55,7 +55,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_hasAccountingPaymentsWithoutGroups_throwsInvalidDistributionConfigException() {
         var request = new UpdatePaymentFiltersRequest(
-                new AccountingPaymentsRequest(true, true, List.of()), null, null, null);
+                new AccountingPaymentsRequest(true, true, List.of()), null, null, null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -64,7 +64,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_groupWithoutConditions_throwsInvalidDistributionConfigException() {
         var request = new UpdatePaymentFiltersRequest(new AccountingPaymentsRequest(
-                true, true, List.of(new PaymentFilterConditionGroupRequest(List.of()))), null, null, null);
+                true, true, List.of(new PaymentFilterConditionGroupRequest(List.of()))), null, null, null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -74,7 +74,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_conditionMissingFieldOrOperator_throwsInvalidDistributionConfigException() {
         var request = new UpdatePaymentFiltersRequest(new AccountingPaymentsRequest(
                 true, true,
-                List.of(group(new PaymentFilterConditionRequest(null, PaymentFilterOperator.EQ, "x")))), null, null, null);
+                List.of(group(new PaymentFilterConditionRequest(null, PaymentFilterOperator.EQ, "x")))), null, null, null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -84,7 +84,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_isNullOperatorWithoutValue_isValid() {
         var request = new UpdatePaymentFiltersRequest(new AccountingPaymentsRequest(
                 true, true,
-                List.of(group(new PaymentFilterConditionRequest("owner", PaymentFilterOperator.IS_NULL, null)))), null, null, null);
+                List.of(group(new PaymentFilterConditionRequest("owner", PaymentFilterOperator.IS_NULL, null)))), null, null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -95,7 +95,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_nonNullableOperatorWithoutValue_throwsInvalidDistributionConfigException() {
         var request = new UpdatePaymentFiltersRequest(new AccountingPaymentsRequest(
                 true, true,
-                List.of(group(new PaymentFilterConditionRequest("payment_type", PaymentFilterOperator.EQ, null)))), null, null, null);
+                List.of(group(new PaymentFilterConditionRequest("payment_type", PaymentFilterOperator.EQ, null)))), null, null, null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -105,7 +105,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_hasAccountingPaymentsFalse_forcesDistributeTrueAndEmptyGroups() {
         var request = new UpdatePaymentFiltersRequest(new AccountingPaymentsRequest(
                 false, false,
-                List.of(group(new PaymentFilterConditionRequest("payment_type", PaymentFilterOperator.EQ, "accounting")))), null, null, null);
+                List.of(group(new PaymentFilterConditionRequest("payment_type", PaymentFilterOperator.EQ, "accounting")))), null, null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -119,7 +119,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_gatewayFiltersIncludeOnlyWithGateways_persistsAsIs() {
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS,
-                new UpdateGatewayFiltersRequest(GatewayFilterMode.INCLUDE_ONLY, List.of("PayU", "WOMPI")), null, null);
+                new UpdateGatewayFiltersRequest(GatewayFilterMode.INCLUDE_ONLY, List.of("PayU", "WOMPI")), null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -130,7 +130,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_gatewayFiltersExcludeWithGateways_persistsAsIs() {
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS,
-                new UpdateGatewayFiltersRequest(GatewayFilterMode.EXCLUDE, List.of("EFECTY")), null, null);
+                new UpdateGatewayFiltersRequest(GatewayFilterMode.EXCLUDE, List.of("EFECTY")), null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -141,7 +141,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_gatewayFiltersAllModeWithGatewaysSent_ignoresGatewaysAndPersistsEmptyList() {
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS,
-                new UpdateGatewayFiltersRequest(GatewayFilterMode.ALL, List.of("PayU")), null, null);
+                new UpdateGatewayFiltersRequest(GatewayFilterMode.ALL, List.of("PayU")), null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -152,7 +152,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_gatewayFiltersIncludeOnlyWithoutGateways_throwsInvalidDistributionConfigException() {
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS,
-                new UpdateGatewayFiltersRequest(GatewayFilterMode.INCLUDE_ONLY, List.of()), null, null);
+                new UpdateGatewayFiltersRequest(GatewayFilterMode.INCLUDE_ONLY, List.of()), null, null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -160,7 +160,7 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_gatewayFiltersModeNotSent_defaultsToAll() {
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -174,7 +174,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_conciliationRequirementsWithValidRule_persistsAsIs() {
         var group = new ConciliationRequirementGroupRequest(List.of(
                 new ConciliationRequirementRuleRequest(ConciliationTable.PAYMENT_TAPE, ConciliationTable.PAYMENTS, "PayU")));
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, List.of(group), null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, List.of(group), null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -189,7 +189,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_conciliationRequirementsRuleWithNullGateway_persistsAsAllGateways() {
         var group = new ConciliationRequirementGroupRequest(List.of(
                 new ConciliationRequirementRuleRequest(ConciliationTable.PAYMENTS, ConciliationTable.BORROWER_CORE, null)));
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, List.of(group), null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, List.of(group), null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -200,7 +200,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_conciliationRequirementsRuleWithSameTable_throwsInvalidDistributionConfigException() {
         var group = new ConciliationRequirementGroupRequest(List.of(
                 new ConciliationRequirementRuleRequest(ConciliationTable.PAYMENTS, ConciliationTable.PAYMENTS, null)));
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, List.of(group), null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, List.of(group), null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -209,7 +209,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_conciliationRequirementsGroupWithoutRules_throwsInvalidDistributionConfigException() {
         var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null,
-                List.of(new ConciliationRequirementGroupRequest(List.of())), null);
+                List.of(new ConciliationRequirementGroupRequest(List.of())), null, null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -217,11 +217,45 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_conciliationRequirementsNotSent_persistsEmptyListWithoutError() {
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 
         assertThat(saved.conciliationRequirements().groups()).isEmpty();
+    }
+
+    @Test
+    void build_conciliationTolerancePercentageWithinRange_persistsAsIs() {
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, 10, null);
+
+        PaymentFiltersConfig saved = builder.build(request);
+
+        assertThat(saved.conciliationRequirements().tolerancePercentage()).isEqualTo(10);
+    }
+
+    @Test
+    void build_conciliationTolerancePercentageNotSent_persistsNull() {
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, null);
+
+        PaymentFiltersConfig saved = builder.build(request);
+
+        assertThat(saved.conciliationRequirements().tolerancePercentage()).isNull();
+    }
+
+    @Test
+    void build_conciliationTolerancePercentageNegative_throwsInvalidDistributionConfigException() {
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, -1, null);
+
+        assertThatThrownBy(() -> builder.build(request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void build_conciliationTolerancePercentageOver100_throwsInvalidDistributionConfigException() {
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, 101, null);
+
+        assertThatThrownBy(() -> builder.build(request))
+                .isInstanceOf(InvalidDistributionConfigException.class);
     }
 
     // ===== Date & Time Filters (VPR-9634) =====
@@ -230,7 +264,7 @@ class PaymentFiltersConfigBuilderTest {
     void build_dateTimeFilterDistributeByDateWithOperatorAndValue_persistsAsIs() {
         var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE,
                 DateTimeFilterOperator.IS_BEFORE, "today", null);
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, List.of(rule));
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -245,7 +279,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_dateTimeFilterDaysBackLimitWithMaxDays_persistsAsIs() {
         var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, 3);
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, List.of(rule));
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         PaymentFiltersConfig saved = builder.build(request);
 
@@ -260,7 +294,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_dateTimeFilterDistributeByDateWithoutOperator_throwsInvalidDistributionConfigException() {
         var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE_TIME, null, "today", null);
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, List.of(rule));
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -269,7 +303,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_dateTimeFilterDistributeByDateWithoutValue_throwsInvalidDistributionConfigException() {
         var rule = new DateTimeFilterRuleRequest(null, DateTimeFilterRuleType.DISTRIBUTE_BY_DATE, DateTimeFilterOperator.IS_AFTER, null, null);
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, List.of(rule));
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -278,7 +312,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_dateTimeFilterDaysBackLimitWithoutMaxDays_throwsInvalidDistributionConfigException() {
         var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, null);
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, List.of(rule));
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -287,7 +321,7 @@ class PaymentFiltersConfigBuilderTest {
     @Test
     void build_dateTimeFilterDaysBackLimitWithNonPositiveMaxDays_throwsInvalidDistributionConfigException() {
         var rule = new DateTimeFilterRuleRequest("EFECTY", DateTimeFilterRuleType.DAYS_BACK_LIMIT, null, null, 0);
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, List.of(rule));
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, List.of(rule));
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -295,7 +329,7 @@ class PaymentFiltersConfigBuilderTest {
 
     @Test
     void build_dateTimeFiltersNotSent_persistsEmptyListWithoutError() {
-        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null);
+        var request = new UpdatePaymentFiltersRequest(NO_ACCOUNTING_PAYMENTS, null, null, null, null);
 
         PaymentFiltersConfig saved = builder.build(request);
 

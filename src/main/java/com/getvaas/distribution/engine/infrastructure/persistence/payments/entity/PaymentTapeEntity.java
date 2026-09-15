@@ -46,6 +46,12 @@ public class PaymentTapeEntity {
     @Column(name = "distribution_id")
     private String distributionId;
 
+    @Column(name = "payment_id")
+    private String paymentId;
+
+    @Column(name = "fund_transfer_id")
+    private String fundTransferId;
+
     @Column(name = "net_amount")
     private BigDecimal netAmount;
 
