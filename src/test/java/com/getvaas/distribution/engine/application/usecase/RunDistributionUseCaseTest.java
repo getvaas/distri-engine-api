@@ -11,7 +11,6 @@ import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,7 +35,7 @@ class RunDistributionUseCaseTest {
     private RunReadinessChecksUseCase runReadinessChecksUseCase;
     @Mock
     private ResolveEligibleFundsUseCase resolveEligibleFundsUseCase;
-    @InjectMocks
+
     private RunDistributionUseCase useCase;
 
     private static final LocalDate DATE = LocalDate.of(2026, 8, 24);
@@ -51,6 +50,9 @@ class RunDistributionUseCaseTest {
     @BeforeEach
     void setUp() {
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfig());
+        // PartitionOwnershipUseCase real (sin dependencias externas) — solo mockeamos lo que toca datos.
+        useCase = new RunDistributionUseCase(resolveActiveDistributionConfigUseCase, runReadinessChecksUseCase,
+                resolveEligibleFundsUseCase, new PartitionOwnershipUseCase());
     }
 
     @Test
@@ -64,7 +66,8 @@ class RunDistributionUseCaseTest {
         var result = useCase.execute(3L, DATE);
 
         assertThat(result.readiness().readyToDistribute()).isTrue();
-        assertThat(result.funds()).isEqualTo(funds);
+        assertThat(result.funds().distributable()).isEqualTo(funds);
+        assertThat(result.funds().ownerless()).isEmpty();
     }
 
     @Test
@@ -76,7 +79,23 @@ class RunDistributionUseCaseTest {
         var result = useCase.execute(3L, DATE);
 
         assertThat(result.readiness().readyToDistribute()).isFalse();
-        assertThat(result.funds()).isEmpty();
+        assertThat(result.funds().distributable()).isEmpty();
+        assertThat(result.funds().ownerless()).isEmpty();
         verify(resolveEligibleFundsUseCase, never()).execute(anyLong(), any());
+    }
+
+    @Test
+    void execute_ready_partitionsOwnerlessFunds() {
+        var readiness = ReadinessCheckOutcome.of(List.of(
+                new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
+        when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
+        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co");
+        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER);
+        when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(List.of(owned, ownerless));
+
+        var result = useCase.execute(3L, DATE);
+
+        assertThat(result.funds().distributable()).containsExactly(owned);
+        assertThat(result.funds().ownerless()).containsExactly(ownerless);
     }
 }

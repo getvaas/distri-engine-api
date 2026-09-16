@@ -1,5 +1,5 @@
 **Created at**: 2026-09-14
-**Status**: Draft
+**Status**: Done
 **Based on story**: @story.md
 
 # Plan: Fallar explícito si amountField viene null en una tape puntual
@@ -18,11 +18,11 @@ cualquier tape cuyo `amountField` configurado resuelva a `null`, en vez de dejar
 ### Phases
 
 #### Phase 1: Validación explícita
-- [ ] `NullAmountFieldValueException` (nueva) con el id de la tape y el `amountField` afectado en el mensaje. — implementado, compila limpio, pendiente de confirmar con tests reales.
-- [ ] `resolveAmount` lanza la excepción nueva si el valor resuelto es `null`, después de la validación de campo soportado. — implementado, pendiente de confirmar.
-- [ ] Registrar en `GlobalExceptionHandler` (409). — implementado, pendiente de confirmar.
-- [ ] `FetchEligiblePaymentTapesUseCaseTest`: nuevo test (`execute_amountFieldNullOnSpecificTape_throws`); confirmar que los tests existentes (incluido `execute_unsupportedAmountField_throws`) siguen pasando sin cambios de comportamiento. — escrito, pendiente de correr.
+- [x] `NullAmountFieldValueException` (nueva) con el id de la tape y el `amountField` afectado en el mensaje.
+- [x] `resolveAmount` lanza la excepción nueva si el valor resuelto es `null`, después de la validación de campo soportado.
+- [x] Registrar en `GlobalExceptionHandler` (409).
+- [x] `FetchEligiblePaymentTapesUseCaseTest`: nuevo test (`execute_amountFieldNullOnSpecificTape_throws`); tests existentes (incluido `execute_unsupportedAmountField_throws`) siguen pasando sin cambios de comportamiento.
 
 ### Next Step
-Código implementado y compilando limpio. Esperando confirmación de una corrida real de tests
-(`./scripts/run-tests.sh`) antes de tildar los checkboxes y marcar Done.
+Fase implementada y verificada con una corrida real de tests en verde (`./scripts/run-tests.sh`,
+confirmado por el usuario en la rama feature/VPR-9667-ownerless-partition, que incluye este código).

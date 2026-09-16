@@ -1,7 +1,7 @@
 **Created at**: 2026-09-14
-**Status**: In Progress
+**Status**: Done
 **Original input**: @original_request.md
-**Plan implemented**: —
+**Plan implemented**: @plan.md
 
 # Story: Fallar explícito si amountField viene null en una tape puntual
 
@@ -13,9 +13,9 @@ tape falla explícito con un mensaje claro, en vez de calcular en base a un dato
 pasar un `null` silencioso.
 
 ### Acceptance Criteria
-- [ ] **Given** un `amountField` configurado y soportado (`net_amount`/`gross_amount`), **When** esa columna viene `null` para una tape puntual, **Then** se lanza `NullAmountFieldValueException` con el id de la tape y el campo afectado, en vez de continuar con un monto `null`.
-- [ ] **Given** el mismo `amountField` con valor no nulo, **When** se resuelve, **Then** el comportamiento existente no cambia.
-- [ ] **Given** un `amountField` no soportado (ni `net_amount` ni `gross_amount`), **When** se resuelve, **Then** sigue lanzando `UnsupportedPoolAmountFieldException` como antes (sin conflicto con la excepción nueva).
+- [x] **Given** un `amountField` configurado y soportado (`net_amount`/`gross_amount`), **When** esa columna viene `null` para una tape puntual, **Then** se lanza `NullAmountFieldValueException` con el id de la tape y el campo afectado, en vez de continuar con un monto `null`.
+- [x] **Given** el mismo `amountField` con valor no nulo, **When** se resuelve, **Then** el comportamiento existente no cambia.
+- [x] **Given** un `amountField` no soportado (ni `net_amount` ni `gross_amount`), **When** se resuelve, **Then** sigue lanzando `UnsupportedPoolAmountFieldException` como antes (sin conflicto con la excepción nueva).
 
 ### Additional Context
 - Jira: VPR-9666. Referencia: `docs/proceso-distribucion-unificado.md` Sección 1 paso 5b, Sección 2 punto 4.
