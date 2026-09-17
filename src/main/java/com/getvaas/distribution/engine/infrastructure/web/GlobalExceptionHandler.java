@@ -9,6 +9,7 @@ import com.getvaas.distribution.engine.application.usecase.InvalidDistributionCo
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NullAmountFieldValueException;
+import com.getvaas.distribution.engine.application.usecase.PaymentTapeNotFoundException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedConciliationRuleException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedOwnershipFieldException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedOwnershipSourceException;
@@ -101,5 +102,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientAccountBalanceException.class)
     public ProblemDetail handleInsufficientAccountBalance(InsufficientAccountBalanceException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(PaymentTapeNotFoundException.class)
+    public ProblemDetail handlePaymentTapeNotFound(PaymentTapeNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 }

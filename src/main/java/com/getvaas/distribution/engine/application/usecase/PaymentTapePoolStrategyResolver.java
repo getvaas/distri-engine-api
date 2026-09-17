@@ -29,7 +29,7 @@ public class PaymentTapePoolStrategyResolver implements PoolStrategyResolver {
     @Override
     public List<PoolFund> resolve(Long companyId, LocalDate date) {
         return fetchEligiblePaymentTapesUseCase.execute(companyId, date).stream()
-                .map(tape -> new PoolFund(tape.id(), tape.amount(), tape.owner()))
+                .map(tape -> new PoolFund(tape.id(), tape.amount(), tape.owner(), tape.paymentDate()))
                 .toList();
     }
 }

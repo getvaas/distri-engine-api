@@ -3,15 +3,15 @@ package com.getvaas.distribution.engine.domain.model;
 import java.util.List;
 
 /**
- * Resultado del "proceso base" de distribución: readiness checks + resolución del pool de fondos
- * elegibles ya particionado entre distribuibles y ownerless (VPR-9667), y los assignments por
- * regla ya calculados sobre el pool distribuible (VPR-9668). {@code funds} y {@code assignments}
- * quedan vacíos si {@code readiness.readyToDistribute()} es {@code false} — no tiene sentido
- * resolver el pool ni armar assignments si no se puede distribuir. No modela todavía persistencia
- * ni notificaciones — esos pasos no existen aún en el motor.
+ * Resultado del pipeline de ejecución: readiness checks + resolución del pool de fondos elegibles
+ * ya particionado entre distribuibles y ownerless (VPR-9667), los assignments por regla (VPR-9668)
+ * y, si se llegó a persistir, el id real de la distribución grabada (VPR-9669) — {@code null} si
+ * {@code readiness.readyToDistribute()} es {@code false} (no hay nada que persistir). No modela
+ * todavía notificaciones ni el reporte distribuido/no-distribuido.
  */
 public record DistributionExecutionResult(
         ReadinessCheckOutcome readiness,
         PartitionedPoolFunds funds,
-        List<Assignment> assignments
+        List<Assignment> assignments,
+        Long distributionId
 ) {}

@@ -11,9 +11,13 @@ import java.math.BigDecimal;
  * para assignments de regla, o {@link RemainingBalanceConfig#destinationAccountId()} para el
  * remanente; nunca null en un {@code Assignment} ya construido (fallar antes si no se puede
  * resolver una cuenta real, ver {@code CalculateAssignmentsUseCase}).
+ * {@code concept} (VPR-9669) es el texto libre para {@code assignment.concept} al persistir —
+ * {@link ComponentOwnerRule#description()} si existe, si no {@code owner} — resuelto acá porque
+ * {@code Assignment} no referencia la regla que lo originó.
  */
 public record Assignment(
         String owner,
         Long accountId,
+        String concept,
         BigDecimal amount
 ) {}

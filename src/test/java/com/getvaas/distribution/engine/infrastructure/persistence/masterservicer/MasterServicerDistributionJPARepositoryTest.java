@@ -1,6 +1,7 @@
 package com.getvaas.distribution.engine.infrastructure.persistence.masterservicer;
 
 import com.getvaas.distribution.engine.infrastructure.config.MasterServicerDataSourceConfig;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.AssignmentEntity;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,7 +10,9 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -82,5 +85,27 @@ class MasterServicerDistributionJPARepositoryTest {
                 1L, startOfDay, endOfDay);
 
         assertThat(result).isFalse();
+    }
+
+    @Test
+    void save_withAssignments_cascadesAndReloadsThroughJoinTable() {
+        var now = LocalDateTime.of(2026, 8, 24, 10, 0);
+        var assignment = AssignmentEntity.builder()
+                .accountId(61L).amount(new BigDecimal("100.00")).currency("COP")
+                .active(true).creationDate(now).lastUpdateDate(now).concept("lender")
+                .build();
+        var distribution = MasterServicerDistributionEntity.builder()
+                .masterTrustServicerId(7L).status("CALCULATED")
+                .distributionDate(now).firstPaymentDate(now).lastPaymentDate(now)
+                .active(true).creationDate(now).lastUpdateDate(now)
+                .assignments(List.of(assignment))
+                .build();
+
+        var saved = repository.save(distribution);
+        var reloaded = repository.findById(saved.getId()).orElseThrow();
+
+        assertThat(reloaded.getAssignments()).hasSize(1);
+        assertThat(reloaded.getAssignments().get(0).getAccountId()).isEqualTo(61L);
+        assertThat(reloaded.getAssignments().get(0).getAmount()).isEqualByComparingTo("100.00");
     }
 }
