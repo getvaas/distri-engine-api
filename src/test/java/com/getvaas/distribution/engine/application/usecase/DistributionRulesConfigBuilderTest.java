@@ -81,7 +81,8 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_ruleWithBalanceStrategy_persists() {
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.PERCENTAGE_OF_POOL,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null,
+                AmountDistributionStrategy.PERCENTAGE_OF_POOL,
                 new BigDecimal("25.5"), null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -89,7 +90,7 @@ class DistributionRulesConfigBuilderTest {
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
 
         assertThat(saved.amountField()).isEqualTo("net_amount");
-        assertThat(saved.sufficiencyStrategy()).isEqualTo(BalanceSufficiencyStrategy.UNTIL_EXHAUSTED);
+        assertThat(saved.sufficiencyStrategy()).isEqualTo(BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS);
         assertThat(saved.distributionStrategy()).isEqualTo(AmountDistributionStrategy.PERCENTAGE_OF_POOL);
         assertThat(saved.distributionValue()).isEqualByComparingTo("25.5");
     }
@@ -107,7 +108,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_fixedAmountWithoutDistributionValue_persistsWithoutError() {
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.IGNORE_BALANCE, AmountDistributionStrategy.FIXED_AMOUNT, null, null);
+                null, null, AmountDistributionStrategy.FIXED_AMOUNT, null, null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
 
@@ -120,7 +121,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_defaultWithDistributionValueSet_persistsAsIs() {
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.SUFFICIENT_OR_STOP, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_STOP, null, AmountDistributionStrategy.DEFAULT,
                 new BigDecimal("100"), null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -172,7 +173,7 @@ class DistributionRulesConfigBuilderTest {
         var condition = new PaymentFilterConditionRequest("contract_id", PaymentFilterOperator.EQ, "123");
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L, 2L), List.of(3L), condition, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -190,7 +191,7 @@ class DistributionRulesConfigBuilderTest {
     void build_accountTransferRuleWithoutCondition_persistsAsNull() {
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -203,7 +204,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_emptyOrMissingAccountTransferRules_persistsEmptyList() {
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT, null, null);
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT, null, null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
 
@@ -216,7 +217,7 @@ class DistributionRulesConfigBuilderTest {
     void build_sameAccountIdInFromAndTo_persistsWithoutError() {
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(1L), null, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -233,7 +234,7 @@ class DistributionRulesConfigBuilderTest {
                 new BigDecimal("2.5"), 9L, DeductionPeriodicity.ONCE_PER_DISTRIBUTION);
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, List.of(deduction));
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -254,7 +255,7 @@ class DistributionRulesConfigBuilderTest {
                 new BigDecimal("50"), null, DeductionPeriodicity.ALWAYS);
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, List.of(deduction));
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -269,7 +270,7 @@ class DistributionRulesConfigBuilderTest {
     void build_emptyOrMissingDeductions_persistsEmptyList() {
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null, null);
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);
@@ -288,7 +289,7 @@ class DistributionRulesConfigBuilderTest {
         var accountTransferRule = new AccountTransferRuleRequest(List.of(1L), List.of(2L), null,
                 List.of(deduction1, deduction2));
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
-                BalanceSufficiencyStrategy.UNTIL_EXHAUSTED, AmountDistributionStrategy.DEFAULT,
+                BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
                 new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null)), null);

@@ -9,6 +9,7 @@ import java.util.List;
 public record BalanceStrategyConfigRequest(
         String amountField,
         BalanceSufficiencyStrategy sufficiencyStrategy,
+        List<Long> accountIdsToCheck,
         AmountDistributionStrategy distributionStrategy,
         BigDecimal distributionValue,
         List<AccountTransferRuleRequest> accountTransferRules

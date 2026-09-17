@@ -73,7 +73,7 @@ public class DistributionRulesConfigBuilder {
             return null;
         }
         return new BalanceStrategyConfig(request.amountField(), request.sufficiencyStrategy(),
-                request.distributionStrategy(), request.distributionValue(),
+                request.accountIdsToCheck(), request.distributionStrategy(), request.distributionValue(),
                 buildAccountTransferRules(request.accountTransferRules()));
     }
 

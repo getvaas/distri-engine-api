@@ -1,7 +1,9 @@
 package com.getvaas.distribution.engine.application.usecase;
 
+import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
+import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
 import com.getvaas.distribution.engine.domain.model.PoolFund;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckOutcome;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckResult;
@@ -22,6 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +38,8 @@ class RunDistributionUseCaseTest {
     private RunReadinessChecksUseCase runReadinessChecksUseCase;
     @Mock
     private ResolveEligibleFundsUseCase resolveEligibleFundsUseCase;
+    @Mock
+    private CalculateAssignmentsUseCase calculateAssignmentsUseCase;
 
     private RunDistributionUseCase useCase;
 
@@ -52,7 +57,7 @@ class RunDistributionUseCaseTest {
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfig());
         // PartitionOwnershipUseCase real (sin dependencias externas) — solo mockeamos lo que toca datos.
         useCase = new RunDistributionUseCase(resolveActiveDistributionConfigUseCase, runReadinessChecksUseCase,
-                resolveEligibleFundsUseCase, new PartitionOwnershipUseCase());
+                resolveEligibleFundsUseCase, new PartitionOwnershipUseCase(), calculateAssignmentsUseCase);
     }
 
     @Test
@@ -62,12 +67,15 @@ class RunDistributionUseCaseTest {
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
         var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co"));
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
+        var assignments = List.of(new Assignment("Owner Co", new BigDecimal("100.00")));
+        when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(assignments);
 
         var result = useCase.execute(3L, DATE);
 
         assertThat(result.readiness().readyToDistribute()).isTrue();
         assertThat(result.funds().distributable()).isEqualTo(funds);
         assertThat(result.funds().ownerless()).isEmpty();
+        assertThat(result.assignments()).isEqualTo(assignments);
     }
 
     @Test
@@ -81,7 +89,9 @@ class RunDistributionUseCaseTest {
         assertThat(result.readiness().readyToDistribute()).isFalse();
         assertThat(result.funds().distributable()).isEmpty();
         assertThat(result.funds().ownerless()).isEmpty();
+        assertThat(result.assignments()).isEmpty();
         verify(resolveEligibleFundsUseCase, never()).execute(anyLong(), any());
+        verify(calculateAssignmentsUseCase, never()).execute(anyLong(), any());
     }
 
     @Test
