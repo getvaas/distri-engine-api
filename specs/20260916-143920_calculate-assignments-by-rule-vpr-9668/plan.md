@@ -58,5 +58,16 @@ futuro.
 - [x] Wiring en `CalculateAssignmentsUseCase`: el chequeo se aplica al monto reclamado por cualquier regla (incluida `DEFAULT`) antes de restarlo del pool.
 - [x] Tests nuevos (balance suficiente, insuficiente con STOP/SKIP/UNTIL_EXHAUSTED, sin `accountIdsToCheck` configurado, sin `sufficiencyStrategy`) + `DistributionRulesConfigBuilderTest` actualizado para el nuevo campo/enum.
 
+#### Phase 4: `toAccountId` real (owner → cuenta)
+Investigando VPR-9669 (persistencia) surgió que el endpoint/tabla real de `Assignment` necesita un
+`accountId` real (Long), no un string libre — y que en el sistema real no existe ningún lookup
+dinámico owner→cuenta: los deals reales configuran el account id a mano, junto a una etiqueta
+descriptiva (`owner_name`/`template_code`). Se decide agregar ese campo ahora, ya que sin él ningún
+`Assignment` calculado es persistible.
+- [x] Agregar `toAccountId: Long` a `ComponentOwnerRule`/`ComponentOwnerRuleRequest` (propagado por `DistributionRulesConfigBuilder`), opcional al guardar (drafts parciales), requerido en ejecución.
+- [x] Extender `Assignment` con `accountId: Long` — `rule.toAccountId()` para assignments de regla, `remainingBalance.destinationAccountId()` para el remanente.
+- [x] `CalculateAssignmentsUseCase`: falla explícito (`InvalidDistributionConfigException`) si una regla produce un monto pero no tiene `toAccountId`, o si sobra remanente y no hay `remainingBalance.destinationAccountId` configurado (no existe ninguna cuenta "default" del company en el sistema real).
+- [x] Tests actualizados/nuevos: `DistributionRulesConfigBuilderTest` (toAccountId set/no seteado), `CalculateAssignmentsUseCaseTest` (toAccountId faltante, remanente sin cuenta con y sin override), `RunDistributionUseCaseTest` actualizado.
+
 ### Next Step
-Las 3 fases están implementadas. Pendiente: correr `./scripts/run-tests.sh` y confirmar que pasan antes de volver a marcar Status Done.
+Las 4 fases están implementadas. Pendiente: correr `./scripts/run-tests.sh` y confirmar que pasan antes de volver a marcar Status Done.

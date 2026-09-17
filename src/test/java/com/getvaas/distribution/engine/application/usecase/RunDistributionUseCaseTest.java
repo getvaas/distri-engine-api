@@ -67,7 +67,7 @@ class RunDistributionUseCaseTest {
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
         var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co"));
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
-        var assignments = List.of(new Assignment("Owner Co", new BigDecimal("100.00")));
+        var assignments = List.of(new Assignment("Owner Co", 61L, new BigDecimal("100.00")));
         when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(assignments);
 
         var result = useCase.execute(3L, DATE);

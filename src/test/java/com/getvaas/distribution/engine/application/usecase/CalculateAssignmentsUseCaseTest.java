@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 class CalculateAssignmentsUseCaseTest {
 
     private static final Long COMPANY_ID = 3L;
+    private static final Long DEFAULT_ACCOUNT_ID = 100L;
 
     @Mock
     private ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
@@ -55,14 +56,14 @@ class CalculateAssignmentsUseCaseTest {
         var balanceStrategy = strategy == null ? null
                 : new BalanceStrategyConfig(null, null, null, strategy,
                         value == null ? null : new BigDecimal(value), List.of());
-        return new ComponentOwnerRule(PaymentComponent.PRINCIPAL, owner, null, balanceStrategy, false);
+        return new ComponentOwnerRule(PaymentComponent.PRINCIPAL, owner, null, balanceStrategy, false, DEFAULT_ACCOUNT_ID);
     }
 
     private ComponentOwnerRule ruleWithBalanceCheck(String owner, AmountDistributionStrategy strategy, String value,
                                                      BalanceSufficiencyStrategy sufficiencyStrategy, Long accountId) {
         var balanceStrategy = new BalanceStrategyConfig(null, sufficiencyStrategy, List.of(accountId), strategy,
                 value == null ? null : new BigDecimal(value), List.of());
-        return new ComponentOwnerRule(PaymentComponent.PRINCIPAL, owner, null, balanceStrategy, false);
+        return new ComponentOwnerRule(PaymentComponent.PRINCIPAL, owner, null, balanceStrategy, false, accountId);
     }
 
     private void mockAccountBalance(Long accountId, String currentBalance) {
@@ -87,7 +88,7 @@ class CalculateAssignmentsUseCaseTest {
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).containsExactly(new Assignment("lender", new BigDecimal("100.00")));
+        assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("100.00")));
     }
 
     @Test
@@ -100,8 +101,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("investor", new BigDecimal("300.00")),
-                new Assignment("lender", new BigDecimal("700.00")));
+                new Assignment("investor", DEFAULT_ACCOUNT_ID, new BigDecimal("300.00")),
+                new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("700.00")));
     }
 
     @Test
@@ -114,24 +115,25 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("fee-collector", new BigDecimal("50.00")),
-                new Assignment("lender", new BigDecimal("450.00")));
+                new Assignment("fee-collector", DEFAULT_ACCOUNT_ID, new BigDecimal("50.00")),
+                new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("450.00")));
     }
 
     @Test
     void execute_percentageOfRemaining_cascadesInConfigOrder() {
+        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
         mockConfig(new DistributionRulesConfig(true, List.of(
                 rule("first", AmountDistributionStrategy.PERCENTAGE_OF_REMAINING, "50"),
-                rule("second", AmountDistributionStrategy.PERCENTAGE_OF_REMAINING, "50")), null));
+                rule("second", AmountDistributionStrategy.PERCENTAGE_OF_REMAINING, "50")), remainingBalance));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "1000.00")), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        // 250.00 quedan sin reclamar -> caen al owner por default (la company)
+        // 250.00 quedan sin reclamar -> caen al override de remainingBalance (accountId 500L)
         assertThat(result).containsExactly(
-                new Assignment("first", new BigDecimal("500.00")),
-                new Assignment("second", new BigDecimal("250.00")),
-                new Assignment(String.valueOf(COMPANY_ID), new BigDecimal("250.00")));
+                new Assignment("first", DEFAULT_ACCOUNT_ID, new BigDecimal("500.00")),
+                new Assignment("second", DEFAULT_ACCOUNT_ID, new BigDecimal("250.00")),
+                new Assignment("500", 500L, new BigDecimal("250.00")));
     }
 
     @Test
@@ -144,8 +146,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("a", new BigDecimal("100.00")),
-                new Assignment("b", new BigDecimal("300.00")));
+                new Assignment("a", DEFAULT_ACCOUNT_ID, new BigDecimal("100.00")),
+                new Assignment("b", DEFAULT_ACCOUNT_ID, new BigDecimal("300.00")));
     }
 
     @Test
@@ -184,13 +186,25 @@ class CalculateAssignmentsUseCaseTest {
     }
 
     @Test
-    void execute_noComponentOwnersConfigured_allPoolGoesToCompany() {
+    void execute_noComponentOwnersConfigured_withoutRemainingBalanceAccount_throws() {
+        // No existe ninguna cuenta "default" del company en el sistema real — sin
+        // remainingBalance.destinationAccountId configurado, no hay dónde persistir el remanente.
         mockConfig(new DistributionRulesConfig(false, List.of(), null));
+        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "250.00")), List.of());
+
+        assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_noComponentOwnersConfigured_withRemainingBalance_fallsBackToOverrideAccount() {
+        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
+        mockConfig(new DistributionRulesConfig(false, List.of(), remainingBalance));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "250.00")), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).containsExactly(new Assignment(String.valueOf(COMPANY_ID), new BigDecimal("250.00")));
+        assertThat(result).containsExactly(new Assignment("500", 500L, new BigDecimal("250.00")));
     }
 
     @Test
@@ -204,8 +218,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("investor", new BigDecimal("40.00")),
-                new Assignment("999", new BigDecimal("60.00")));
+                new Assignment("investor", DEFAULT_ACCOUNT_ID, new BigDecimal("40.00")),
+                new Assignment("999", 999L, new BigDecimal("60.00")));
     }
 
     @Test
@@ -219,16 +233,28 @@ class CalculateAssignmentsUseCaseTest {
     }
 
     @Test
+    void execute_ruleWithoutToAccountId_throwsInvalidDistributionConfig() {
+        var balanceStrategy = new BalanceStrategyConfig(null, null, null,
+                AmountDistributionStrategy.FIXED_AMOUNT, new BigDecimal("50.00"), List.of());
+        var rule = new ComponentOwnerRule(PaymentComponent.PRINCIPAL, "lender", null, balanceStrategy, false, null);
+        mockConfig(new DistributionRulesConfig(true, List.of(rule), null));
+        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "50.00")), List.of());
+
+        assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
     void execute_sufficientBalanceOrStop_withEnoughBalance_assignsFullAmount() {
         mockAccountBalance(61L, "1000.00");
         mockConfig(new DistributionRulesConfig(true, List.of(
                 ruleWithBalanceCheck("lender", AmountDistributionStrategy.FIXED_AMOUNT, "50.00",
                         BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_STOP, 61L)), null));
-        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
+        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "50.00")), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).contains(new Assignment("lender", new BigDecimal("50.00")));
+        assertThat(result).containsExactly(new Assignment("lender", 61L, new BigDecimal("50.00")));
     }
 
     @Test
@@ -246,38 +272,41 @@ class CalculateAssignmentsUseCaseTest {
     @Test
     void execute_sufficientBalanceOrSkipAllBorrowers_withInsufficientBalance_skipsRuleOnly() {
         mockAccountBalance(61L, "10.00");
+        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
         mockConfig(new DistributionRulesConfig(true, List.of(
                 ruleWithBalanceCheck("borrower", AmountDistributionStrategy.FIXED_AMOUNT, "50.00",
-                        BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_SKIP_ALL_BORROWERS, 61L)), null));
+                        BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_SKIP_ALL_BORROWERS, 61L)), remainingBalance));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        // La regla se saltea (monto 0, sin assignment); el pool entero cae al owner por default.
-        assertThat(result).containsExactly(new Assignment(String.valueOf(COMPANY_ID), new BigDecimal("100.00")));
+        // La regla se saltea (monto 0, sin assignment); el pool entero cae al override de remainingBalance.
+        assertThat(result).containsExactly(new Assignment("500", 500L, new BigDecimal("100.00")));
     }
 
     @Test
     void execute_untilBalanceExhausted_capsAtAvailableBalance() {
         mockAccountBalance(61L, "30.00");
+        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
         mockConfig(new DistributionRulesConfig(true, List.of(
                 ruleWithBalanceCheck("lender", AmountDistributionStrategy.FIXED_AMOUNT, "50.00",
-                        BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, 61L)), null));
+                        BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, 61L)), remainingBalance));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        // Capado a los 30.00 disponibles; los 70.00 restantes del pool caen al owner por default.
+        // Capado a los 30.00 disponibles; los 70.00 restantes caen al override de remainingBalance.
         assertThat(result).containsExactly(
-                new Assignment("lender", new BigDecimal("30.00")),
-                new Assignment(String.valueOf(COMPANY_ID), new BigDecimal("70.00")));
+                new Assignment("lender", 61L, new BigDecimal("30.00")),
+                new Assignment("500", 500L, new BigDecimal("70.00")));
     }
 
     @Test
     void execute_balanceCheckWithoutAccountIdsToCheck_throwsInvalidDistributionConfig() {
         var balanceStrategy = new BalanceStrategyConfig(null, BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_STOP,
                 List.of(), AmountDistributionStrategy.FIXED_AMOUNT, new BigDecimal("50.00"), List.of());
-        var rule = new ComponentOwnerRule(PaymentComponent.PRINCIPAL, "lender", null, balanceStrategy, false);
+        var rule = new ComponentOwnerRule(PaymentComponent.PRINCIPAL, "lender", null, balanceStrategy, false,
+                DEFAULT_ACCOUNT_ID);
         mockConfig(new DistributionRulesConfig(true, List.of(rule), null));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
 
@@ -289,10 +318,10 @@ class CalculateAssignmentsUseCaseTest {
     void execute_noSufficiencyStrategyConfigured_skipsBalanceCheckEntirely() {
         mockConfig(new DistributionRulesConfig(true, List.of(
                 rule("lender", AmountDistributionStrategy.FIXED_AMOUNT, "50.00")), null));
-        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
+        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "50.00")), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).contains(new Assignment("lender", new BigDecimal("50.00")));
+        assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("50.00")));
     }
 }

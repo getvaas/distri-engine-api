@@ -4,13 +4,16 @@ import java.math.BigDecimal;
 
 /**
  * Paso 7 del pipeline de ejecución (VPR-9668): cuánto le corresponde a un owner, ya calculado a
- * partir del pool distribuible y las reglas de Distribution Rules (VPR-9643). {@code owner} sigue
- * el mismo patrón de string libre que {@link PoolFund#owner()} y {@link ComponentOwnerRule#owner()}
- * — para el remanente sin reclamar por ninguna regla, es {@code String.valueOf(companyId)} (el
- * borrower de la distribución) o, si {@link RemainingBalanceConfig} está configurado,
- * {@code String.valueOf(destinationAccountId)}.
+ * partir del pool distribuible y las reglas de Distribution Rules (VPR-9643). {@code owner} es la
+ * etiqueta descriptiva (mismo patrón de string libre que {@link PoolFund#owner()} y
+ * {@link ComponentOwnerRule#owner()} — para el remanente sin reclamar, {@code String.valueOf(companyId)}).
+ * {@code accountId} es la cuenta real a la que se persiste el monto — {@link ComponentOwnerRule#toAccountId()}
+ * para assignments de regla, o {@link RemainingBalanceConfig#destinationAccountId()} para el
+ * remanente; nunca null en un {@code Assignment} ya construido (fallar antes si no se puede
+ * resolver una cuenta real, ver {@code CalculateAssignmentsUseCase}).
  */
 public record Assignment(
         String owner,
+        Long accountId,
         BigDecimal amount
 ) {}

@@ -28,8 +28,11 @@ import java.util.List;
  * la única regla {@code DEFAULT} permitida, que se lleva lo que quede. Cada monto reclamado pasa
  * por el chequeo de balance antes de restarse del pool — si el chequeo lo reduce (o lo anula), lo
  * no asignado queda disponible para el resto de las reglas / el remanente final. Lo que ninguna
- * regla reclama cae al owner por default (el borrower de la distribución) o al override de
- * {@code remainingBalance} si está configurado.
+ * regla reclama cae al owner por default (el borrower de la distribución), pero requiere
+ * {@code remainingBalance.destinationAccountId} configurado para poder persistirse — sin él, falla
+ * explícito (no existe ninguna cuenta "default" del company en el sistema real). Cada
+ * {@code ComponentOwnerRule} que produce un monto también requiere su propio {@code toAccountId}
+ * configurado, mismo criterio.
  */
 @Component
 @RequiredArgsConstructor
@@ -93,7 +96,8 @@ public class CalculateAssignmentsUseCase {
         }
 
         if (remaining.compareTo(BigDecimal.ZERO) > 0) {
-            assignments.add(new Assignment(defaultOwner(companyId, rulesConfig), remaining));
+            assignments.add(new Assignment(defaultOwner(companyId, rulesConfig),
+                    requireRemainderAccountId(rulesConfig), remaining));
         }
 
         return assignments;
@@ -102,11 +106,29 @@ public class CalculateAssignmentsUseCase {
     private BigDecimal addAssignmentIfAny(List<Assignment> assignments, ComponentOwnerRule rule, BigDecimal amount,
                                            BigDecimal remaining, BigDecimal totalPool) {
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
-            assignments.add(new Assignment(rule.owner(), amount));
+            assignments.add(new Assignment(rule.owner(), requireToAccountId(rule), amount));
         }
         var newRemaining = remaining.subtract(amount);
         requireNotOverAllocated(newRemaining, totalPool);
         return newRemaining;
+    }
+
+    private Long requireToAccountId(ComponentOwnerRule rule) {
+        if (rule.toAccountId() == null) {
+            throw new InvalidDistributionConfigException(
+                    "La regla de '" + rule.owner() + "' requiere 'toAccountId' configurado para poder persistir un assignment");
+        }
+        return rule.toAccountId();
+    }
+
+    private Long requireRemainderAccountId(DistributionRulesConfig rulesConfig) {
+        var remainingBalance = rulesConfig != null ? rulesConfig.remainingBalance() : null;
+        if (remainingBalance == null || remainingBalance.destinationAccountId() == null) {
+            throw new InvalidDistributionConfigException(
+                    "Hay remanente sin reclamar por ninguna regla y 'remainingBalance.destinationAccountId' "
+                            + "no está configurado — no hay dónde persistirlo");
+        }
+        return remainingBalance.destinationAccountId();
     }
 
     private BigDecimal applyBalanceCheck(BigDecimal amount, ComponentOwnerRule rule) {
