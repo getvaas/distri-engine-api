@@ -57,4 +57,7 @@ public class PaymentTapeEntity {
 
     @Column(name = "gross_amount")
     private BigDecimal grossAmount;
+
+    @Column(name = "gateway_code")
+    private String gatewayCode;
 }

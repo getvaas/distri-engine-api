@@ -24,6 +24,8 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePaymentFilte
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -146,7 +148,8 @@ public class PaymentFiltersConfigBuilder {
             if (ruleRequest.maxDays() == null || ruleRequest.maxDays() <= 0) {
                 throw new InvalidDistributionConfigException("ruleType=DAYS_BACK_LIMIT requiere 'maxDays' > 0");
             }
-            return new DateTimeFilterRule(ruleRequest.gateway(), ruleRequest.ruleType(), null, null, ruleRequest.maxDays());
+            return new DateTimeFilterRule(ruleRequest.gateway(), ruleRequest.ruleType(), null, null,
+                    ruleRequest.maxDays(), null, ruleRequest.businessDays());
         }
 
         if (ruleRequest.operator() == null) {
@@ -158,7 +161,20 @@ public class PaymentFiltersConfigBuilder {
                     "ruleType=" + ruleRequest.ruleType() + " requiere 'value'");
         }
 
-        return new DateTimeFilterRule(ruleRequest.gateway(), ruleRequest.ruleType(), ruleRequest.operator(), ruleRequest.value(), null);
+        var cutoffTime = parseCutoffTime(ruleRequest.cutoffTime());
+        return new DateTimeFilterRule(ruleRequest.gateway(), ruleRequest.ruleType(), ruleRequest.operator(),
+                ruleRequest.value(), null, cutoffTime, null);
+    }
+
+    private LocalTime parseCutoffTime(String cutoffTime) {
+        if (cutoffTime == null || cutoffTime.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(cutoffTime);
+        } catch (DateTimeParseException e) {
+            throw new InvalidDistributionConfigException("cutoffTime inválido: '" + cutoffTime + "', formato esperado HH:mm");
+        }
     }
 
     private PaymentFilterConditionGroup buildConditionGroup(PaymentFilterConditionGroupRequest groupRequest) {
