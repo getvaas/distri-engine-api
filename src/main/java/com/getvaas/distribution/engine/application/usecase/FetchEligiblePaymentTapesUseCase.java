@@ -67,7 +67,9 @@ public class FetchEligiblePaymentTapesUseCase {
     private BigDecimal resolveAmount(PaymentTapeEntity entity, String amountField) {
         var value = switch (amountField) {
             case "net_amount" -> entity.getNetAmount();
-            case "gross_amount" -> entity.getGrossAmount();
+            // "gross_amount" no es una columna real de payment_tape — remapeado a total_payment,
+            // la columna real más cercana (ver PaymentTapeEntity).
+            case "gross_amount" -> entity.getTotalPayment();
             default -> throw new UnsupportedPoolAmountFieldException(amountField);
         };
         if (value == null) {

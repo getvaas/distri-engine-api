@@ -129,11 +129,12 @@ class FetchEligiblePaymentTapesUseCaseTest {
     }
 
     @Test
-    void execute_amountFieldGrossAmount_usesGrossAmountColumn() {
+    void execute_amountFieldGrossAmount_usesTotalPaymentColumn() {
+        // "gross_amount" no es una columna real de payment_tape — se remapea a total_payment.
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(5, "gross_amount"));
         var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
                 .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0))
-                .netAmount(new BigDecimal("90.00")).grossAmount(new BigDecimal("100.00")).build();
+                .netAmount(new BigDecimal("90.00")).totalPayment(new BigDecimal("100.00")).build();
         when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
                 eq(3L), any(), any())).thenReturn(List.of(entity));
 

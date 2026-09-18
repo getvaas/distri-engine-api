@@ -8,6 +8,7 @@ import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.AssignmentEntity;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +27,24 @@ import java.util.Objects;
  * {@code NOTHING_DISTRIBUTABLE} (mismos 2 valores del motor real). {@code firstPaymentDate}/
  * {@code lastPaymentDate} son {@code NOT NULL} en la tabla real — si no hay fondos distribuibles de
  * los que derivarlas (pool vacío), caen a la fecha de la corrida.
+ * <p>
+ * Cada {@code Assignment} se logea antes de intentar persistir — si {@code accountId} no existe
+ * de verdad (owner mal configurado, cuenta inexistente), el insert falla con una violación de FK
+ * sin decir cuál owner/monto la causó; el log de acá arriba sí lo deja trazable.
+ * <p>
+ * {@code assignment.concept} se trunca a {@code CONCEPT_MAX_LENGTH} antes de persistir —
+ * {@code assignment.concept} en la tabla real es {@code VARCHAR(100)} (verificado,
+ * {@code V1.0.9__alter_assignment_table.sql}), pero {@code Assignment.concept()} viene de
+ * {@code ComponentOwnerRule.description()}, texto libre sin límite en nuestra config.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PersistDistributionUseCase {
 
     private static final String STATUS_CALCULATED = "CALCULATED";
     private static final String STATUS_NOTHING_DISTRIBUTABLE = "NOTHING_DISTRIBUTABLE";
+    private static final int CONCEPT_MAX_LENGTH = 100;
 
     private final MasterServicerDistributionJPARepository distributionRepository;
 
@@ -41,6 +53,13 @@ public class PersistDistributionUseCase {
                                                       PartitionedPoolFunds funds, List<Assignment> assignments) {
         var now = LocalDateTime.now();
         var currency = config.config().currency();
+        var status = assignments.isEmpty() ? STATUS_NOTHING_DISTRIBUTABLE : STATUS_CALCULATED;
+
+        log.info("Persistiendo distribución: companyId={}, masterTrustId={}, date={}, status={}, assignments={}",
+                config.companyId(), config.masterTrustId(), date, status, assignments.size());
+        assignments.forEach(assignment -> log.info(
+                "Assignment a persistir: owner={}, accountId={}, amount={} {}, concept={}",
+                assignment.owner(), assignment.accountId(), assignment.amount(), currency, assignment.concept()));
 
         var assignmentEntities = assignments.stream()
                 .map(assignment -> toAssignmentEntity(assignment, currency, now))
@@ -48,7 +67,7 @@ public class PersistDistributionUseCase {
 
         var distribution = MasterServicerDistributionEntity.builder()
                 .masterTrustServicerId(config.masterTrustId())
-                .status(assignmentEntities.isEmpty() ? STATUS_NOTHING_DISTRIBUTABLE : STATUS_CALCULATED)
+                .status(status)
                 .distributionDate(date.atStartOfDay())
                 .firstPaymentDate(minPaymentDate(funds.distributable(), date))
                 .lastPaymentDate(maxPaymentDate(funds.distributable(), date))
@@ -69,8 +88,17 @@ public class PersistDistributionUseCase {
                 .active(true)
                 .creationDate(now)
                 .lastUpdateDate(now)
-                .concept(assignment.concept())
+                .concept(truncateConcept(assignment.concept()))
                 .build();
+    }
+
+    private String truncateConcept(String concept) {
+        if (concept == null || concept.length() <= CONCEPT_MAX_LENGTH) {
+            return concept;
+        }
+        log.warn("concept truncado de {} a {} caracteres antes de persistir: '{}'",
+                concept.length(), CONCEPT_MAX_LENGTH, concept);
+        return concept.substring(0, CONCEPT_MAX_LENGTH);
     }
 
     private LocalDateTime minPaymentDate(List<PoolFund> distributable, LocalDate fallback) {

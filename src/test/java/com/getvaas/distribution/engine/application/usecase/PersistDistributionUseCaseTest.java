@@ -121,4 +121,37 @@ class PersistDistributionUseCaseTest {
         assertThat(persisted.getFirstPaymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 18, 9, 0));
         assertThat(persisted.getLastPaymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 22, 9, 0));
     }
+
+    @Test
+    void execute_conceptLongerThan100Chars_truncatesBeforePersisting() {
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
+                LocalDateTime.of(2026, 8, 20, 10, 0));
+        var funds = new PartitionedPoolFunds(List.of(fund), List.of());
+        var longConcept = "x".repeat(150);
+        var assignment = new Assignment("lender", 61L, longConcept, new BigDecimal("100.00"));
+        mockSave();
+
+        var captor = ArgumentCaptor.forClass(MasterServicerDistributionEntity.class);
+        useCase.execute(config(), DATE, funds, List.of(assignment));
+
+        verify(distributionRepository).save(captor.capture());
+        var concept = captor.getValue().getAssignments().get(0).getConcept();
+        assertThat(concept).hasSize(100);
+        assertThat(concept).isEqualTo("x".repeat(100));
+    }
+
+    @Test
+    void execute_conceptWithin100Chars_persistsAsIs() {
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
+                LocalDateTime.of(2026, 8, 20, 10, 0));
+        var funds = new PartitionedPoolFunds(List.of(fund), List.of());
+        var assignment = new Assignment("lender", 61L, "short concept", new BigDecimal("100.00"));
+        mockSave();
+
+        var captor = ArgumentCaptor.forClass(MasterServicerDistributionEntity.class);
+        useCase.execute(config(), DATE, funds, List.of(assignment));
+
+        verify(distributionRepository).save(captor.capture());
+        assertThat(captor.getValue().getAssignments().get(0).getConcept()).isEqualTo("short concept");
+    }
 }

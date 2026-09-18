@@ -109,7 +109,9 @@ public class ApplyPaymentFiltersUseCase {
             case "payment_id" -> tape.getPaymentId();
             case "fund_transfer_id" -> tape.getFundTransferId();
             case "net_amount" -> tape.getNetAmount();
-            case "gross_amount" -> tape.getGrossAmount();
+            // "gross_amount" no es una columna real de payment_tape — remapeado a total_payment,
+            // la columna real más cercana (ver PaymentTapeEntity).
+            case "gross_amount" -> tape.getTotalPayment();
             case "gateway_code" -> tape.getGatewayCode();
             default -> throw new UnsupportedPaymentFilterFieldException(
                     "El campo '" + field + "' no está mapeado todavía en payment_tape para Payment Filters");
