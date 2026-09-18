@@ -31,7 +31,7 @@ class PaymentTapePoolStrategyResolverTest {
 
     @Test
     void resolve_mapsEligibleTapesToPoolFunds() {
-        var tape = new EligiblePaymentTape("pt-1", 3L, LocalDateTime.now(), new BigDecimal("100.00"));
+        var tape = new EligiblePaymentTape("pt-1", 3L, LocalDateTime.now(), new BigDecimal("100.00"), "Owner Co");
         when(fetchEligiblePaymentTapesUseCase.execute(3L, LocalDate.of(2026, 8, 24)))
                 .thenReturn(List.of(tape));
 
@@ -40,5 +40,6 @@ class PaymentTapePoolStrategyResolverTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).sourceId()).isEqualTo("pt-1");
         assertThat(result.get(0).amount()).isEqualByComparingTo("100.00");
+        assertThat(result.get(0).owner()).isEqualTo("Owner Co");
     }
 }

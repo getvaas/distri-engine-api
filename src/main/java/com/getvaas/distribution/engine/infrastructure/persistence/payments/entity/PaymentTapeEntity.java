@@ -60,4 +60,7 @@ public class PaymentTapeEntity {
 
     @Column(name = "gateway_code")
     private String gatewayCode;
+
+    @Column(name = "owner_name")
+    private String ownerName;
 }

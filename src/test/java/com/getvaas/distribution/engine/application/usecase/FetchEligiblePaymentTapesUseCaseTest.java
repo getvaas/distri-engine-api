@@ -2,9 +2,12 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
+import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
+import com.getvaas.distribution.engine.domain.model.OwnershipSourceConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentTapePoolConfig;
 import com.getvaas.distribution.engine.domain.model.PoolConfig;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
+import com.getvaas.distribution.engine.domain.model.enums.OwnershipSourceType;
 import com.getvaas.distribution.engine.domain.model.enums.PoolStrategyType;
 import com.getvaas.distribution.engine.domain.service.calendar.WorkingDaysCalculator;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.PaymentTapeJPARepository;
@@ -45,7 +48,7 @@ class FetchEligiblePaymentTapesUseCaseTest {
         var workingDaysCalculator = new WorkingDaysCalculator();
         useCase = new FetchEligiblePaymentTapesUseCase(
                 resolveActiveDistributionConfigUseCase, workingDaysCalculator, paymentTapeJPARepository,
-                new ApplyPaymentFiltersUseCase(workingDaysCalculator));
+                new ApplyPaymentFiltersUseCase(workingDaysCalculator), new ResolveOwnershipUseCase());
     }
 
     private DistributionConfig activeConfigWithDaysBack(Integer daysBack) {
@@ -53,11 +56,15 @@ class FetchEligiblePaymentTapesUseCaseTest {
     }
 
     private DistributionConfig activeConfigWith(Integer daysBack, String amountField) {
+        return activeConfigWith(daysBack, amountField, null);
+    }
+
+    private DistributionConfig activeConfigWith(Integer daysBack, String amountField, OwnershipConfig ownership) {
         var poolConfig = daysBack != null
                 ? new PoolConfig(PoolStrategyType.PAYMENT_TAPE, new PaymentTapePoolConfig(amountField, daysBack), null, null)
                 : null;
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                poolConfig, null, null, null, null, null, null, null);
+                poolConfig, null, null, null, ownership, null, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
@@ -103,6 +110,22 @@ class FetchEligiblePaymentTapesUseCaseTest {
         assertThat(result.get(0).companyId()).isEqualTo(3L);
         assertThat(result.get(0).paymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 20, 10, 0));
         assertThat(result.get(0).amount()).isEqualByComparingTo("100.50");
+        assertThat(result.get(0).owner()).isEqualTo(ResolveOwnershipUseCase.UNDEFINED_OWNER);
+    }
+
+    @Test
+    void execute_ownershipConfigured_resolvesOwnerFromPaymentTapeField() {
+        var ownership = new OwnershipConfig(new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null), null);
+        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(5, "net_amount", ownership));
+        var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
+                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0))
+                .netAmount(new BigDecimal("100.50")).ownerName("Somos SAS").build();
+        when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
+                eq(3L), any(), any())).thenReturn(List.of(entity));
+
+        var result = useCase.execute(3L, LocalDate.of(2026, 8, 24));
+
+        assertThat(result.get(0).owner()).isEqualTo("Somos SAS");
     }
 
     @Test
