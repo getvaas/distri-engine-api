@@ -16,4 +16,10 @@ public interface PaymentTapeJPARepository extends JpaRepository<PaymentTapeEntit
 
     List<PaymentTapeEntity> findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
             Long companyId, LocalDateTime fromDate, LocalDateTime untilDate);
+
+    // VPR-9670: sheets del reporte distribuido/no-distribuido — "no distribuido" es sin filtro de
+    // fecha (coincide con el comportamiento verificado del motor real, paso 10d).
+    List<PaymentTapeEntity> findByCompanyIdAndDistributionId(Long companyId, String distributionId);
+
+    List<PaymentTapeEntity> findByCompanyIdAndDistributionIdIsNull(Long companyId);
 }

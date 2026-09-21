@@ -49,6 +49,7 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	implementation 'org.mapstruct:mapstruct:1.6.3'
 	implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
+	implementation 'org.apache.poi:poi-ooxml:5.4.0'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
