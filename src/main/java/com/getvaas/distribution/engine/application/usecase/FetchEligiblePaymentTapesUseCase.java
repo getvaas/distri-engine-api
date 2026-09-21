@@ -15,8 +15,9 @@ import java.util.List;
  * Bloque 2 del pipeline de ejecución (VPR-9662): trae los payment tapes elegibles — dentro de la
  * ventana de días hábiles configurada en Pool Strategy, todavía no distribuidos, con Payment
  * Filters (VPR-9664) y el gate de conciliación ya aplicados, el monto resuelto según
- * {@code amountField} (VPR-9628), y el owner resuelto (Bloque 3, VPR-9665). Pieza interna del motor
- * de ejecución, consumida por el orquestador (no expuesta por ningún endpoint — mismo criterio que
+ * {@code amountField} (VPR-9628, con falla explícita si viene {@code null} en una tape puntual —
+ * VPR-9666), y el owner resuelto (Bloque 3, VPR-9665). Pieza interna del motor de ejecución,
+ * consumida por el orquestador (no expuesta por ningún endpoint — mismo criterio que
  * {@link RunReadinessChecksUseCase}).
  */
 @Component
@@ -64,10 +65,14 @@ public class FetchEligiblePaymentTapesUseCase {
     }
 
     private BigDecimal resolveAmount(PaymentTapeEntity entity, String amountField) {
-        return switch (amountField) {
+        var value = switch (amountField) {
             case "net_amount" -> entity.getNetAmount();
             case "gross_amount" -> entity.getGrossAmount();
             default -> throw new UnsupportedPoolAmountFieldException(amountField);
         };
+        if (value == null) {
+            throw new NullAmountFieldValueException(entity.getId(), amountField);
+        }
+        return value;
     }
 }

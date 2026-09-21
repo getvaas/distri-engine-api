@@ -5,6 +5,7 @@ import com.getvaas.distribution.engine.application.usecase.DistributionConfigNot
 import com.getvaas.distribution.engine.application.usecase.InvalidDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
+import com.getvaas.distribution.engine.application.usecase.NullAmountFieldValueException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedConciliationRuleException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedOwnershipFieldException;
 import com.getvaas.distribution.engine.application.usecase.UnsupportedOwnershipSourceException;
@@ -76,6 +77,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnsupportedOwnershipSourceException.class)
     public ProblemDetail handleUnsupportedOwnershipSource(UnsupportedOwnershipSourceException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(NullAmountFieldValueException.class)
+    public ProblemDetail handleNullAmountFieldValue(NullAmountFieldValueException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }
