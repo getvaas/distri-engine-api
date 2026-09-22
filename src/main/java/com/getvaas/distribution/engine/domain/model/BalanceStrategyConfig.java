@@ -22,11 +22,17 @@ import java.util.List;
  * {@code accountTransferRules} (VPR-9702) declara desde/hacia qué cuentas se mueve el balance,
  * con una condición opcional por regla — puede haber varias combinaciones distintas bajo la
  * misma balance strategy.
+ * <p>
+ * {@code accountIdsToCheck} (VPR-9668) son las cuentas cuyo balance real se consulta cuando
+ * {@code sufficiencyStrategy} está configurado — equivalente a {@code BalanceRule.accountIdsToCheck}
+ * del motor real (verificado contra {@code master-trust-servicer-api}). Vacío/null cuando
+ * {@code sufficiencyStrategy} es {@code null} (sin chequeo de balance).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BalanceStrategyConfig(
         String amountField,
         BalanceSufficiencyStrategy sufficiencyStrategy,
+        List<Long> accountIdsToCheck,
         AmountDistributionStrategy distributionStrategy,
         BigDecimal distributionValue,
         List<AccountTransferRule> accountTransferRules

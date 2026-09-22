@@ -20,11 +20,20 @@ import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
  * sin relación forzada con el flag equivalente a nivel deal
  * ({@code AccountingPaymentsConfig.distributeAccountingPayments}, VPR-9631) — comparten nombre
  * por describir el mismo concepto de negocio, pero se evalúan por separado en ejecución.
+ * <p>
+ * {@code toAccountId} (VPR-9668) es la cuenta real a la que se transfiere el monto de esta regla —
+ * verificado contra {@code AssignmentConfig.toAccountId}/{@code Assignment.accountId} del motor
+ * real: los deals reales configuran este id a mano, {@code owner} es solo una etiqueta descriptiva
+ * al lado (mismo patrón que {@code owner_name}/{@code template_code} en la config real), no una
+ * clave de la que se pueda derivar el id — no existe ningún lookup dinámico owner→cuenta en el
+ * sistema real. Opcional al guardar (permite drafts parciales, mismo criterio del resto del
+ * repo), pero requerido en tiempo de ejecución para poder persistir un {@code Assignment} real.
  */
 public record ComponentOwnerRule(
         PaymentComponent component,
         String owner,
         String description,
         BalanceStrategyConfig balanceStrategy,
-        boolean distributeAccountingPayments
+        boolean distributeAccountingPayments,
+        Long toAccountId
 ) {}

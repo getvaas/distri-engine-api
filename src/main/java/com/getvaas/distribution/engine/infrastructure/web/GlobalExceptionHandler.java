@@ -1,7 +1,10 @@
 package com.getvaas.distribution.engine.infrastructure.web;
 
+import com.getvaas.distribution.engine.application.usecase.AmbiguousDefaultDistributionStrategyException;
+import com.getvaas.distribution.engine.application.usecase.AssignmentAllocationExceedsPoolException;
 import com.getvaas.distribution.engine.application.usecase.DistributionConfigNotActiveException;
 import com.getvaas.distribution.engine.application.usecase.DistributionConfigNotFoundException;
+import com.getvaas.distribution.engine.application.usecase.InsufficientAccountBalanceException;
 import com.getvaas.distribution.engine.application.usecase.InvalidDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
@@ -82,6 +85,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NullAmountFieldValueException.class)
     public ProblemDetail handleNullAmountFieldValue(NullAmountFieldValueException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(AssignmentAllocationExceedsPoolException.class)
+    public ProblemDetail handleAssignmentAllocationExceedsPool(AssignmentAllocationExceedsPoolException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(AmbiguousDefaultDistributionStrategyException.class)
+    public ProblemDetail handleAmbiguousDefaultDistributionStrategy(AmbiguousDefaultDistributionStrategyException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InsufficientAccountBalanceException.class)
+    public ProblemDetail handleInsufficientAccountBalance(InsufficientAccountBalanceException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

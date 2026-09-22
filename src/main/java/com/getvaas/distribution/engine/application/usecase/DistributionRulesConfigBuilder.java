@@ -65,7 +65,7 @@ public class DistributionRulesConfigBuilder {
 
         return new ComponentOwnerRule(ruleRequest.component(), ruleRequest.owner(), ruleRequest.description(),
                 buildBalanceStrategyConfig(ruleRequest.balanceStrategy()),
-                Boolean.TRUE.equals(ruleRequest.distributeAccountingPayments()));
+                Boolean.TRUE.equals(ruleRequest.distributeAccountingPayments()), ruleRequest.toAccountId());
     }
 
     private BalanceStrategyConfig buildBalanceStrategyConfig(BalanceStrategyConfigRequest request) {
@@ -73,7 +73,7 @@ public class DistributionRulesConfigBuilder {
             return null;
         }
         return new BalanceStrategyConfig(request.amountField(), request.sufficiencyStrategy(),
-                request.distributionStrategy(), request.distributionValue(),
+                request.accountIdsToCheck(), request.distributionStrategy(), request.distributionValue(),
                 buildAccountTransferRules(request.accountTransferRules()));
     }
 
