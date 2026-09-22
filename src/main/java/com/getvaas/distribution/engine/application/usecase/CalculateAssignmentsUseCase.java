@@ -96,8 +96,8 @@ public class CalculateAssignmentsUseCase {
         }
 
         if (remaining.compareTo(BigDecimal.ZERO) > 0) {
-            assignments.add(new Assignment(defaultOwner(companyId, rulesConfig),
-                    requireRemainderAccountId(rulesConfig), remaining));
+            var owner = defaultOwner(companyId, rulesConfig);
+            assignments.add(new Assignment(owner, requireRemainderAccountId(rulesConfig), owner, remaining));
         }
 
         return assignments;
@@ -106,11 +106,15 @@ public class CalculateAssignmentsUseCase {
     private BigDecimal addAssignmentIfAny(List<Assignment> assignments, ComponentOwnerRule rule, BigDecimal amount,
                                            BigDecimal remaining, BigDecimal totalPool) {
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
-            assignments.add(new Assignment(rule.owner(), requireToAccountId(rule), amount));
+            assignments.add(new Assignment(rule.owner(), requireToAccountId(rule), conceptOf(rule), amount));
         }
         var newRemaining = remaining.subtract(amount);
         requireNotOverAllocated(newRemaining, totalPool);
         return newRemaining;
+    }
+
+    private String conceptOf(ComponentOwnerRule rule) {
+        return rule.description() != null && !rule.description().isBlank() ? rule.description() : rule.owner();
     }
 
     private Long requireToAccountId(ComponentOwnerRule rule) {

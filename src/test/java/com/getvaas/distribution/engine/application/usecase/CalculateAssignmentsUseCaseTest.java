@@ -49,7 +49,7 @@ class CalculateAssignmentsUseCaseTest {
     }
 
     private PoolFund fund(String sourceId, String amount) {
-        return new PoolFund(sourceId, new BigDecimal(amount), "welli");
+        return new PoolFund(sourceId, new BigDecimal(amount), "welli", LocalDateTime.of(2026, 8, 20, 10, 0));
     }
 
     private ComponentOwnerRule rule(String owner, AmountDistributionStrategy strategy, String value) {
@@ -88,7 +88,7 @@ class CalculateAssignmentsUseCaseTest {
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("100.00")));
+        assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, "lender", new BigDecimal("100.00")));
     }
 
     @Test
@@ -101,8 +101,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("investor", DEFAULT_ACCOUNT_ID, new BigDecimal("300.00")),
-                new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("700.00")));
+                new Assignment("investor", DEFAULT_ACCOUNT_ID, "investor", new BigDecimal("300.00")),
+                new Assignment("lender", DEFAULT_ACCOUNT_ID, "lender", new BigDecimal("700.00")));
     }
 
     @Test
@@ -115,8 +115,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("fee-collector", DEFAULT_ACCOUNT_ID, new BigDecimal("50.00")),
-                new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("450.00")));
+                new Assignment("fee-collector", DEFAULT_ACCOUNT_ID, "fee-collector", new BigDecimal("50.00")),
+                new Assignment("lender", DEFAULT_ACCOUNT_ID, "lender", new BigDecimal("450.00")));
     }
 
     @Test
@@ -131,9 +131,9 @@ class CalculateAssignmentsUseCaseTest {
 
         // 250.00 quedan sin reclamar -> caen al override de remainingBalance (accountId 500L)
         assertThat(result).containsExactly(
-                new Assignment("first", DEFAULT_ACCOUNT_ID, new BigDecimal("500.00")),
-                new Assignment("second", DEFAULT_ACCOUNT_ID, new BigDecimal("250.00")),
-                new Assignment("500", 500L, new BigDecimal("250.00")));
+                new Assignment("first", DEFAULT_ACCOUNT_ID, "first", new BigDecimal("500.00")),
+                new Assignment("second", DEFAULT_ACCOUNT_ID, "second", new BigDecimal("250.00")),
+                new Assignment("500", 500L, "500", new BigDecimal("250.00")));
     }
 
     @Test
@@ -146,8 +146,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("a", DEFAULT_ACCOUNT_ID, new BigDecimal("100.00")),
-                new Assignment("b", DEFAULT_ACCOUNT_ID, new BigDecimal("300.00")));
+                new Assignment("a", DEFAULT_ACCOUNT_ID, "a", new BigDecimal("100.00")),
+                new Assignment("b", DEFAULT_ACCOUNT_ID, "b", new BigDecimal("300.00")));
     }
 
     @Test
@@ -204,7 +204,7 @@ class CalculateAssignmentsUseCaseTest {
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).containsExactly(new Assignment("500", 500L, new BigDecimal("250.00")));
+        assertThat(result).containsExactly(new Assignment("500", 500L, "500", new BigDecimal("250.00")));
     }
 
     @Test
@@ -218,8 +218,8 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(
-                new Assignment("investor", DEFAULT_ACCOUNT_ID, new BigDecimal("40.00")),
-                new Assignment("999", 999L, new BigDecimal("60.00")));
+                new Assignment("investor", DEFAULT_ACCOUNT_ID, "investor", new BigDecimal("40.00")),
+                new Assignment("999", 999L, "999", new BigDecimal("60.00")));
     }
 
     @Test
@@ -254,7 +254,7 @@ class CalculateAssignmentsUseCaseTest {
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).containsExactly(new Assignment("lender", 61L, new BigDecimal("50.00")));
+        assertThat(result).containsExactly(new Assignment("lender", 61L, "lender", new BigDecimal("50.00")));
     }
 
     @Test
@@ -281,7 +281,7 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         // La regla se saltea (monto 0, sin assignment); el pool entero cae al override de remainingBalance.
-        assertThat(result).containsExactly(new Assignment("500", 500L, new BigDecimal("100.00")));
+        assertThat(result).containsExactly(new Assignment("500", 500L, "500", new BigDecimal("100.00")));
     }
 
     @Test
@@ -297,8 +297,8 @@ class CalculateAssignmentsUseCaseTest {
 
         // Capado a los 30.00 disponibles; los 70.00 restantes caen al override de remainingBalance.
         assertThat(result).containsExactly(
-                new Assignment("lender", 61L, new BigDecimal("30.00")),
-                new Assignment("500", 500L, new BigDecimal("70.00")));
+                new Assignment("lender", 61L, "lender", new BigDecimal("30.00")),
+                new Assignment("500", 500L, "500", new BigDecimal("70.00")));
     }
 
     @Test
@@ -322,6 +322,6 @@ class CalculateAssignmentsUseCaseTest {
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, new BigDecimal("50.00")));
+        assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, "lender", new BigDecimal("50.00")));
     }
 }

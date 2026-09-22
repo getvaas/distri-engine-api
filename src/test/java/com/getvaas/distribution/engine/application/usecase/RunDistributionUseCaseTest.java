@@ -10,6 +10,7 @@ import com.getvaas.distribution.engine.domain.model.ReadinessCheckResult;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckStatus;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckType;
+import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +25,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,6 +43,10 @@ class RunDistributionUseCaseTest {
     private ResolveEligibleFundsUseCase resolveEligibleFundsUseCase;
     @Mock
     private CalculateAssignmentsUseCase calculateAssignmentsUseCase;
+    @Mock
+    private PersistDistributionUseCase persistDistributionUseCase;
+    @Mock
+    private MarkPaymentTapesAsDistributedUseCase markPaymentTapesAsDistributedUseCase;
 
     private RunDistributionUseCase useCase;
 
@@ -55,9 +62,12 @@ class RunDistributionUseCaseTest {
     @BeforeEach
     void setUp() {
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfig());
+        lenient().when(persistDistributionUseCase.execute(any(), any(), any(), any()))
+                .thenReturn(MasterServicerDistributionEntity.builder().id(99L).build());
         // PartitionOwnershipUseCase real (sin dependencias externas) — solo mockeamos lo que toca datos.
         useCase = new RunDistributionUseCase(resolveActiveDistributionConfigUseCase, runReadinessChecksUseCase,
-                resolveEligibleFundsUseCase, new PartitionOwnershipUseCase(), calculateAssignmentsUseCase);
+                resolveEligibleFundsUseCase, new PartitionOwnershipUseCase(), calculateAssignmentsUseCase,
+                persistDistributionUseCase, markPaymentTapesAsDistributedUseCase);
     }
 
     @Test
@@ -65,9 +75,9 @@ class RunDistributionUseCaseTest {
         var readiness = ReadinessCheckOutcome.of(List.of(
                 new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
-        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co"));
+        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null));
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
-        var assignments = List.of(new Assignment("Owner Co", 61L, new BigDecimal("100.00")));
+        var assignments = List.of(new Assignment("Owner Co", 61L, "Owner Co", new BigDecimal("100.00")));
         when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(assignments);
 
         var result = useCase.execute(3L, DATE);
@@ -76,6 +86,9 @@ class RunDistributionUseCaseTest {
         assertThat(result.funds().distributable()).isEqualTo(funds);
         assertThat(result.funds().ownerless()).isEmpty();
         assertThat(result.assignments()).isEqualTo(assignments);
+        assertThat(result.distributionId()).isEqualTo(99L);
+        verify(persistDistributionUseCase).execute(any(), eq(DATE), any(PartitionedPoolFunds.class), eq(assignments));
+        verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(funds));
     }
 
     @Test
@@ -90,8 +103,11 @@ class RunDistributionUseCaseTest {
         assertThat(result.funds().distributable()).isEmpty();
         assertThat(result.funds().ownerless()).isEmpty();
         assertThat(result.assignments()).isEmpty();
+        assertThat(result.distributionId()).isNull();
         verify(resolveEligibleFundsUseCase, never()).execute(anyLong(), any());
         verify(calculateAssignmentsUseCase, never()).execute(anyLong(), any());
+        verify(persistDistributionUseCase, never()).execute(any(), any(), any(), any());
+        verify(markPaymentTapesAsDistributedUseCase, never()).execute(anyLong(), anyString(), any());
     }
 
     @Test
@@ -99,13 +115,14 @@ class RunDistributionUseCaseTest {
         var readiness = ReadinessCheckOutcome.of(List.of(
                 new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
-        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co");
-        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER);
+        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null);
+        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER, null);
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(List.of(owned, ownerless));
 
         var result = useCase.execute(3L, DATE);
 
         assertThat(result.funds().distributable()).containsExactly(owned);
         assertThat(result.funds().ownerless()).containsExactly(ownerless);
+        verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(List.of(owned)));
     }
 }

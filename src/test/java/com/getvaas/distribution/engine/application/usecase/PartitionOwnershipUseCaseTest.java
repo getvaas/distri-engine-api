@@ -14,7 +14,7 @@ class PartitionOwnershipUseCaseTest {
 
     @Test
     void execute_fundWithRealOwner_isDistributable() {
-        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co");
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null);
 
         var result = useCase.execute(List.of(fund));
 
@@ -24,7 +24,7 @@ class PartitionOwnershipUseCaseTest {
 
     @Test
     void execute_fundWithUndefinedOwner_isOwnerless() {
-        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER);
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER, null);
 
         var result = useCase.execute(List.of(fund));
 
@@ -34,8 +34,8 @@ class PartitionOwnershipUseCaseTest {
 
     @Test
     void execute_mixOfBoth_partitionsCorrectly() {
-        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co");
-        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER);
+        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null);
+        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER, null);
 
         var result = useCase.execute(List.of(owned, ownerless));
 

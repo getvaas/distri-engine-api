@@ -22,6 +22,12 @@ import java.time.LocalDateTime;
  * La tabla está {@code PARTITION BY RANGE (company_id)} — por eso {@code @IdClass}: obliga a pasar
  * {@code companyId} en cualquier acceso por id, para no poder generar (ni pedir por accidente) una
  * query sin el filtro de partición.
+ * <p>
+ * {@code total_payment} (no {@code gross_amount} — esa columna nunca existió en la tabla real,
+ * verificado contra el schema real de {@code payments_db}) es la que responde a la opción
+ * {@code gross_amount} de {@code amountField}/Payment Filters — remapeo pragmático mientras no haya
+ * un reemplazo mejor confirmado (el candidato {@code net_amount + fee_amount} no sirve hoy porque
+ * {@code fee_amount} siempre viene null, bug conocido del extractor, VPR-9666).
  */
 @Entity
 @Table(name = "payment_tape")
@@ -55,8 +61,8 @@ public class PaymentTapeEntity {
     @Column(name = "net_amount")
     private BigDecimal netAmount;
 
-    @Column(name = "gross_amount")
-    private BigDecimal grossAmount;
+    @Column(name = "total_payment")
+    private BigDecimal totalPayment;
 
     @Column(name = "gateway_code")
     private String gatewayCode;
