@@ -13,9 +13,10 @@ import java.util.List;
  * Orquestador base del motor de ejecución (VPR-9662): resuelve la config ACTIVE de la company una
  * sola vez, corre las precondiciones (readiness checks) sobre esa config puntual, y si está lista
  * para distribuir, resuelve el pool de fondos elegibles según su Pool Strategy, lo particiona
- * entre distribuibles y ownerless (VPR-9667), calcula los assignments por regla (VPR-9668), y
- * persiste la distribución + marca los payment tapes distribuidos (VPR-9669). No incluye todavía
- * notificaciones ni el reporte distribuido/no-distribuido.
+ * entre distribuibles y ownerless (VPR-9667), calcula los assignments por regla (VPR-9668),
+ * persiste la distribución + marca los payment tapes distribuidos (VPR-9669), y notifica el
+ * resultado (VPR-9671, primera iteración funcional). No incluye todavía el reporte
+ * distribuido/no-distribuido como adjunto de la notificación.
  */
 @Component
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class RunDistributionUseCase {
     private final CalculateAssignmentsUseCase calculateAssignmentsUseCase;
     private final PersistDistributionUseCase persistDistributionUseCase;
     private final MarkPaymentTapesAsDistributedUseCase markPaymentTapesAsDistributedUseCase;
+    private final NotifyDistributionResultUseCase notifyDistributionResultUseCase;
 
     public DistributionExecutionResult execute(Long companyId, LocalDate date) {
         var config = resolveActiveDistributionConfigUseCase.execute(companyId);
@@ -47,6 +49,8 @@ public class RunDistributionUseCase {
         var persisted = persistDistributionUseCase.execute(config, date, partitioned, assignments);
         markPaymentTapesAsDistributedUseCase.execute(companyId, String.valueOf(persisted.getId()), partitioned.distributable());
 
-        return new DistributionExecutionResult(readiness, partitioned, assignments, persisted.getId());
+        var result = new DistributionExecutionResult(readiness, partitioned, assignments, persisted.getId());
+        notifyDistributionResultUseCase.execute(config, companyId, result);
+        return result;
     }
 }
