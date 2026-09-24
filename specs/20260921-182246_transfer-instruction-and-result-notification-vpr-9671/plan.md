@@ -1,5 +1,5 @@
 **Created at**: 2026-09-21
-**Status**: In Progress
+**Status**: Done
 **Based on story**: @story.md
 
 # Plan: Notificar el resultado de una distribución vía notifications-api
@@ -45,5 +45,38 @@ Primera iteración funcional: el motor llama de verdad a `notifications-api` (au
 - [x] Wirear la llamada al final de `RunDistributionUseCase.execute()` (solo camino exitoso).
 - [x] Tests: `NotifyDistributionResultUseCaseTest`, caso nuevo en `RunDistributionUseCaseTest`.
 
+#### Phase 3: Auto-creación del template en notifications-api (2026-09-24)
+Gap encontrado testeando manualmente: en el sistema real, `CreateDistributionConfig.execute()`
+(`CreateDistributionConfig.kt:34,52-76`) asegura que exista un template en `notifications-api`
+para el `type`+`channelId` de la notificación ANTES de que cualquier corrida intente notificar —
+si no existe, lo crea con un HTML default. Sin este paso, `notify()` de VPR-9671 le pega a
+`notifications-api` esperando un template que puede no existir nunca. Verificado contra el código
+real (`NotificationHttpProvider.kt`, `NotificationProvider.kt`): la respuesta de `GET /templates`
+viene envuelta en `{"data": [...]}` (no una lista plana), el filtro por `channelId` es del lado
+del cliente (la query real solo manda `type`+`page`+`limit`), y `channelId=3` + el HTML default
+fueron confirmados por el usuario copiando el texto real de `CreateDistributionConfig.kt:80-119`.
+- [x] Ampliar `domain/port/NotificationProvider.java`: `getTemplates(type, channelId)`,
+      `createTemplate(text, type, channelId)`.
+- [x] `domain/model/NotificationTemplate.java` (record: `id`, `type`, `channelId`).
+- [x] Implementar ambos métodos en `NotificationApiClient` (`GET /templates?type=&page=0&limit=1`
+      + envoltorio `data`, `POST /templates` con `channel_id` snake_case).
+- [x] `application/usecase/EnsureNotificationTemplateUseCase.java` — mismo gating que
+      `NotifyDistributionResultUseCase` (notifications/channels/templates presentes, evento
+      `DISTRIBUTION_SUCCEEDED` habilitado, recipients no vacío); `type = "<companyId>_DISTRIBUTION_SUCCEEDED"`,
+      `channelId=3`; `getTemplates` primero, `createTemplate` con el HTML real solo si no existe;
+      excepción del provider se loguea (WARN) y no se propaga.
+- [x] Wirear en `CreateDistributionConfigUseCase.execute()`, al final, sobre la config ya creada
+      — mismo momento que el sistema real (no en update, no en cada corrida).
+- [x] Tests: 2 nuevos en `NotificationApiClientTest` (`getTemplates` con envoltorio+filtro,
+      `createTemplate` éxito/sin id), `EnsureNotificationTemplateUseCaseTest` (7 casos), caso
+      nuevo en `CreateDistributionConfigUseCaseTest`.
+
+**Límite conocido, importante para probar**: este fix solo corre dentro de
+`CreateDistributionConfigUseCase` (vía `POST /configs`) — los escenarios de prueba
+(`examples/scenario-0N-*.sql`) insertan `distribution_engine_config` directo por SQL, sin pasar
+por ese use case, así que **no** les crea el template retroactivamente. Para que scenario-06
+efectivamente encuentre/cree el template hace falta crear esa config vía `POST /configs` en vez
+de (o además de) el INSERT directo.
+
 ### Next Step
-Ambas fases implementadas y compilando limpio. Falta correr `./scripts/run-tests.sh` y confirmar que pasan antes de marcar Status Done.
+All phases completed. See resume.md.

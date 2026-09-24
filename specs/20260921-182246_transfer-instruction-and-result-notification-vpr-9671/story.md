@@ -1,7 +1,7 @@
 **Created at**: 2026-09-21
-**Status**: In Progress
+**Status**: Done
 **Original input**: https://pmvaas1.atlassian.net/browse/VPR-9671
-**Plan implemented**: —
+**Plan implemented**: @plan.md
 
 # Story: Notificar el resultado de una distribución vía notifications-api
 
