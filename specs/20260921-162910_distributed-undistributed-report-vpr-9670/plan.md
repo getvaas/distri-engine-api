@@ -1,5 +1,5 @@
 **Created at**: 2026-09-21
-**Status**: Draft
+**Status**: Done
 **Based on story**: @story.md
 
 # Plan: Generar el reporte Excel de payment tapes distribuidos y no distribuidos
@@ -30,4 +30,4 @@ Generar, on-demand y sin persistir nada, un `.xlsx` con 2 sheets ("Distributed P
 - [x] Tests AAA (Mockito/AssertJ + Apache POI para parsear el resultado y verificar sheets/columnas/filas).
 
 ### Next Step
-Única fase implementada. Pendiente: correr `./scripts/run-tests.sh` y confirmar que pasan antes de marcar Status Done.
+All phases completed. See resume.md.

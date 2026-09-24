@@ -1,7 +1,7 @@
 **Created at**: 2026-09-21
-**Status**: In Progress
+**Status**: Done
 **Original input**: @original_request.md
-**Plan implemented**: —
+**Plan implemented**: @specs/20260921-162910_distributed-undistributed-report-vpr-9670/plan.md
 
 # Story: Generar el reporte Excel de payment tapes distribuidos y no distribuidos
 
