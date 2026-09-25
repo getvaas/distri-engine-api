@@ -1,13 +1,10 @@
 package com.getvaas.distribution.engine.application.usecase;
 
-import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
-import com.getvaas.distribution.engine.domain.model.DistributionExecutionResult;
 import com.getvaas.distribution.engine.domain.model.NotificationChannelsConfig;
 import com.getvaas.distribution.engine.domain.model.NotificationTemplatesConfig;
 import com.getvaas.distribution.engine.domain.model.NotificationsConfig;
-import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
 import com.getvaas.distribution.engine.domain.model.enums.NotificationChannel;
 import com.getvaas.distribution.engine.domain.model.enums.NotificationEvent;
@@ -17,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,6 +27,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class NotifyDistributionResultUseCaseTest {
 
     private static final Long COMPANY_ID = 3L;
+    private static final Long DISTRIBUTION_ID = 427L;
+    private static final int ASSIGNMENTS_COUNT = 1;
 
     @Mock
     private NotificationProvider notificationProvider;
@@ -39,21 +37,16 @@ class NotifyDistributionResultUseCaseTest {
         return new NotifyDistributionResultUseCase(notificationProvider);
     }
 
-    private DistributionExecutionResult result() {
-        var assignments = List.of(new Assignment("Owner Co", 61L, "Owner Co", new BigDecimal("100.00")));
-        return new DistributionExecutionResult(null, new PartitionedPoolFunds(List.of(), List.of()), assignments, 427L);
-    }
-
     private DistributionConfig configWith(NotificationsConfig notifications) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, notifications, null);
+                null, null, null, null, null, null, notifications, null, null);
         return new DistributionConfig("id-1", "Deal", COMPANY_ID, COMPANY_ID, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
 
     @Test
     void execute_notificationsConfigMissing_doesNothing() {
-        useCase().execute(configWith(null), COMPANY_ID, result());
+        useCase().execute(configWith(null), COMPANY_ID, DISTRIBUTION_ID, ASSIGNMENTS_COUNT);
 
         verifyNoInteractions(notificationProvider);
     }
@@ -65,7 +58,7 @@ class NotifyDistributionResultUseCaseTest {
                 new NotificationTemplatesConfig("Subject", List.of("owner@example.com"), null),
                 null);
 
-        useCase().execute(configWith(notifications), COMPANY_ID, result());
+        useCase().execute(configWith(notifications), COMPANY_ID, DISTRIBUTION_ID, ASSIGNMENTS_COUNT);
 
         verifyNoInteractions(notificationProvider);
     }
@@ -77,7 +70,7 @@ class NotifyDistributionResultUseCaseTest {
                 new NotificationTemplatesConfig("Subject", List.of(), null),
                 null);
 
-        useCase().execute(configWith(notifications), COMPANY_ID, result());
+        useCase().execute(configWith(notifications), COMPANY_ID, DISTRIBUTION_ID, ASSIGNMENTS_COUNT);
 
         verifyNoInteractions(notificationProvider);
     }
@@ -89,7 +82,7 @@ class NotifyDistributionResultUseCaseTest {
                 new NotificationTemplatesConfig("Subject", List.of("owner@example.com"), null),
                 null);
 
-        useCase().execute(configWith(notifications), COMPANY_ID, result());
+        useCase().execute(configWith(notifications), COMPANY_ID, DISTRIBUTION_ID, ASSIGNMENTS_COUNT);
 
         verify(notificationProvider).notify(
                 eq("DISTRIBUTION_SUCCEEDED"),
@@ -107,7 +100,7 @@ class NotifyDistributionResultUseCaseTest {
         doThrow(new RuntimeException("notifications-api unavailable"))
                 .when(notificationProvider).notify(any(), any(), any(), any());
 
-        useCase().execute(configWith(notifications), COMPANY_ID, result());
+        useCase().execute(configWith(notifications), COMPANY_ID, DISTRIBUTION_ID, ASSIGNMENTS_COUNT);
 
         verify(notificationProvider).notify(eq("DISTRIBUTION_SUCCEEDED"), any(), any(), any());
     }

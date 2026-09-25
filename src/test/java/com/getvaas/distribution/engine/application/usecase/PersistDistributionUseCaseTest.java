@@ -36,8 +36,12 @@ class PersistDistributionUseCaseTest {
     private PersistDistributionUseCase useCase;
 
     private DistributionConfig config() {
+        return config(null);
+    }
+
+    private DistributionConfig config(Boolean draftModeEnabled) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, draftModeEnabled);
         return new DistributionConfig("id-1", "Deal", 3L, 7L, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
@@ -49,7 +53,7 @@ class PersistDistributionUseCaseTest {
     }
 
     @Test
-    void execute_withAssignments_persistsAsCalculated() {
+    void execute_withAssignments_persistsAsApproved() {
         var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
                 LocalDateTime.of(2026, 8, 20, 10, 0));
         var funds = new PartitionedPoolFunds(List.of(fund), List.of());
@@ -62,7 +66,7 @@ class PersistDistributionUseCaseTest {
         verify(distributionRepository).save(captor.capture());
         var persisted = captor.getValue();
         assertThat(persisted.getMasterTrustServicerId()).isEqualTo(7L);
-        assertThat(persisted.getStatus()).isEqualTo("CALCULATED");
+        assertThat(persisted.getStatus()).isEqualTo("approved");
         assertThat(persisted.getActive()).isTrue();
         assertThat(persisted.getFirstPaymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 20, 10, 0));
         assertThat(persisted.getLastPaymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 20, 10, 0));
@@ -86,8 +90,50 @@ class PersistDistributionUseCaseTest {
 
         verify(distributionRepository).save(captor.capture());
         var persisted = captor.getValue();
-        assertThat(persisted.getStatus()).isEqualTo("NOTHING_DISTRIBUTABLE");
+        assertThat(persisted.getStatus()).isEqualTo("nothing_distributable");
         assertThat(persisted.getAssignments()).isEmpty();
+    }
+
+    @Test
+    void execute_draftModeEnabledWithAssignments_persistsAsDraft() {
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
+                LocalDateTime.of(2026, 8, 20, 10, 0));
+        var funds = new PartitionedPoolFunds(List.of(fund), List.of());
+        var assignment = new Assignment("lender", 61L, "lender", new BigDecimal("100.00"));
+        mockSave();
+
+        var captor = ArgumentCaptor.forClass(MasterServicerDistributionEntity.class);
+        useCase.execute(config(true), DATE, funds, List.of(assignment));
+
+        verify(distributionRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("draft");
+    }
+
+    @Test
+    void execute_draftModeEnabledWithoutAssignments_stillPersistsAsNothingDistributable() {
+        var funds = new PartitionedPoolFunds(List.of(), List.of());
+        mockSave();
+
+        var captor = ArgumentCaptor.forClass(MasterServicerDistributionEntity.class);
+        useCase.execute(config(true), DATE, funds, List.of());
+
+        verify(distributionRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("nothing_distributable");
+    }
+
+    @Test
+    void execute_draftModeExplicitlyDisabled_persistsAsApproved() {
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
+                LocalDateTime.of(2026, 8, 20, 10, 0));
+        var funds = new PartitionedPoolFunds(List.of(fund), List.of());
+        var assignment = new Assignment("lender", 61L, "lender", new BigDecimal("100.00"));
+        mockSave();
+
+        var captor = ArgumentCaptor.forClass(MasterServicerDistributionEntity.class);
+        useCase.execute(config(false), DATE, funds, List.of(assignment));
+
+        verify(distributionRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("approved");
     }
 
     @Test

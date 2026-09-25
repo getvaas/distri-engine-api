@@ -52,14 +52,14 @@ class CreateDistributionConfigUseCaseTest {
     void execute_validRequestWithoutNodes_createsConfigInDraftStatusWithAllNodesNull() {
         var request = new CreateDistributionConfigRequest(
                 "SOMOS Internet - Distribution", 3L, 3L, "Colombia (COL)", "COP",
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         var savedEntity = DistributionEngineConfigEntity.builder().id("generated-id").build();
         var savedDomain = new DistributionConfig(
                 "generated-id", request.name(), request.companyId(), request.masterTrustId(),
                 DistributionConfigStatus.DRAFT,
                 new DistributionConfigPayload(request.country(), request.currency(),
-                        null, null, null, null, null, null, null, null),
+                        null, null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null
         );
 
@@ -79,13 +79,13 @@ class CreateDistributionConfigUseCaseTest {
     @Test
     void execute_masterTrustIdNotProvided_createsConfigWithoutMasterTrust() {
         var request = new CreateDistributionConfigRequest("Deal sin MT", 5L, null, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         var savedEntity = DistributionEngineConfigEntity.builder().id("generated-id").build();
         var savedDomain = new DistributionConfig(
                 "generated-id", request.name(), request.companyId(), null,
                 DistributionConfigStatus.DRAFT,
-                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null),
+                new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null, null),
                 LocalDateTime.now(), LocalDateTime.now(), null, null
         );
 
@@ -103,7 +103,8 @@ class CreateDistributionConfigUseCaseTest {
         var request = new CreateDistributionConfigRequest("Full create", 3L, 3L, "Colombia (COL)", "COP",
                 new UpdatePoolConfigRequest(PoolStrategyType.PAYMENT_TAPE, "gross_amount", 30, null),
                 null, null, null, null, null, null,
-                new UpdateVirtualColumnsRequest(List.of(new VirtualColumnRequest("lender_amount", "capital + interest"))));
+                new UpdateVirtualColumnsRequest(List.of(new VirtualColumnRequest("lender_amount", "capital + interest"))),
+                null);
 
         var savedEntity = DistributionEngineConfigEntity.builder().id("generated-id").build();
         when(mapper.toEntity(any())).thenReturn(savedEntity);

@@ -33,7 +33,7 @@ class ResolveEligibleFundsUseCaseTest {
     private DistributionConfig configWithStrategy(PoolStrategyType strategy) {
         var poolConfig = strategy != null ? new PoolConfig(strategy, null, null, null) : null;
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                poolConfig, null, null, null, null, null, null, null);
+                poolConfig, null, null, null, null, null, null, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, null, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }

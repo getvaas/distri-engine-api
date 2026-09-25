@@ -1,7 +1,6 @@
 package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
-import com.getvaas.distribution.engine.domain.model.DistributionExecutionResult;
 import com.getvaas.distribution.engine.domain.model.enums.NotificationEvent;
 import com.getvaas.distribution.engine.domain.port.NotificationProvider;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,12 @@ import java.util.Map;
  * mejora posterior. Si el deal no tiene {@code notifications} configurado, o no tiene el evento
  * habilitado, o no tiene destinatarios, no hace nada. Una falla de {@link NotificationProvider} se
  * loguea y nunca se propaga — la distribución ya quedó persistida antes de llegar acá.
+ * <p>
+ * Firma reducida a los datos mínimos que realmente usa (VPR-9876) — antes recibía el
+ * {@code DistributionExecutionResult} completo de {@code RunDistributionUseCase}, pero
+ * {@code ApproveDraftDistributionUseCase} también necesita notificar (al aprobar un draft) sin
+ * tener un {@code DistributionExecutionResult} disponible (no hay readiness/funds al aprobar algo
+ * ya persistido).
  */
 @Slf4j
 @Component
@@ -29,7 +34,7 @@ public class NotifyDistributionResultUseCase {
 
     private final NotificationProvider notificationProvider;
 
-    public void execute(DistributionConfig config, Long companyId, DistributionExecutionResult result) {
+    public void execute(DistributionConfig config, Long companyId, Long distributionId, int assignmentsCount) {
         var notifications = config.config().notifications();
         if (notifications == null || notifications.channels() == null || notifications.templates() == null) {
             return;
@@ -46,18 +51,18 @@ public class NotifyDistributionResultUseCase {
         }
 
         try {
-            notificationProvider.notify(EVENT.name(), recipients, buildContext(companyId, result), List.of());
+            notificationProvider.notify(EVENT.name(), recipients, buildContext(companyId, distributionId, assignmentsCount), List.of());
         } catch (Exception e) {
             log.warn("No se pudo notificar el resultado de la distribución [companyId={}, distributionId={}]: {}",
-                    companyId, result.distributionId(), e.getMessage(), e);
+                    companyId, distributionId, e.getMessage(), e);
         }
     }
 
-    private Map<String, String> buildContext(Long companyId, DistributionExecutionResult result) {
+    private Map<String, String> buildContext(Long companyId, Long distributionId, int assignmentsCount) {
         var context = new HashMap<String, String>();
         context.put("companyId", String.valueOf(companyId));
-        context.put("distributionId", String.valueOf(result.distributionId()));
-        context.put("assignmentsCount", String.valueOf(result.assignments().size()));
+        context.put("distributionId", String.valueOf(distributionId));
+        context.put("assignmentsCount", String.valueOf(assignmentsCount));
         return context;
     }
 }

@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,7 +57,7 @@ class RunDistributionUseCaseTest {
 
     private DistributionConfig activeConfig() {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
         return new DistributionConfig("id-1", "Deal", 3L, 3L, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
@@ -91,7 +92,7 @@ class RunDistributionUseCaseTest {
         assertThat(result.distributionId()).isEqualTo(99L);
         verify(persistDistributionUseCase).execute(any(), eq(DATE), any(PartitionedPoolFunds.class), eq(assignments));
         verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(funds));
-        verify(notifyDistributionResultUseCase).execute(any(), eq(3L), eq(result));
+        verify(notifyDistributionResultUseCase).execute(any(), eq(3L), eq(99L), eq(assignments.size()));
     }
 
     @Test
@@ -111,7 +112,7 @@ class RunDistributionUseCaseTest {
         verify(calculateAssignmentsUseCase, never()).execute(anyLong(), any());
         verify(persistDistributionUseCase, never()).execute(any(), any(), any(), any());
         verify(markPaymentTapesAsDistributedUseCase, never()).execute(anyLong(), anyString(), any());
-        verify(notifyDistributionResultUseCase, never()).execute(any(), anyLong(), any());
+        verify(notifyDistributionResultUseCase, never()).execute(any(), anyLong(), anyLong(), anyInt());
     }
 
     @Test
@@ -128,5 +129,24 @@ class RunDistributionUseCaseTest {
         assertThat(result.funds().distributable()).containsExactly(owned);
         assertThat(result.funds().ownerless()).containsExactly(ownerless);
         verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(List.of(owned)));
+    }
+
+    @Test
+    void execute_persistedAsDraft_marksTapesButDoesNotNotify() {
+        var readiness = ReadinessCheckOutcome.of(List.of(
+                new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
+        when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
+        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null));
+        when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
+        var assignments = List.of(new Assignment("Owner Co", 61L, "Owner Co", new BigDecimal("100.00")));
+        when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(assignments);
+        when(persistDistributionUseCase.execute(any(), any(), any(), any()))
+                .thenReturn(MasterServicerDistributionEntity.builder().id(99L).status("draft").build());
+
+        var result = useCase.execute(3L, DATE);
+
+        assertThat(result.distributionId()).isEqualTo(99L);
+        verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(funds));
+        verify(notifyDistributionResultUseCase, never()).execute(any(), anyLong(), anyLong(), anyInt());
     }
 }

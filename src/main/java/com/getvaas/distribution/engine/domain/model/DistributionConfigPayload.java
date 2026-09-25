@@ -18,5 +18,6 @@ public record DistributionConfigPayload(
         OwnershipConfig ownership,        // VPR-9635 (source) / VPR-9636 (cross validation) tipados
         ReadinessChecksConfig readinessChecks, // VPR-9637/9638 tipado (solo BUSINESS_DAY tiene check real en ejecución, VPR-9661)
         NotificationsConfig notifications, // VPR-9639 (channels/events) / VPR-9640 (templates) tipados; body queda bloqueado, sin modelar
-        TransferInstructionsConfig transferInstructions // VPR-9713 tipado (referencia liviana a owner_dictionary.json externo)
+        TransferInstructionsConfig transferInstructions, // VPR-9713 tipado (referencia liviana a owner_dictionary.json externo)
+        Boolean draftModeEnabled // VPR-9876: si es true, RunDistributionUseCase persiste en DistributionStatus.DRAFT y no notifica hasta que se apruebe
 ) {}

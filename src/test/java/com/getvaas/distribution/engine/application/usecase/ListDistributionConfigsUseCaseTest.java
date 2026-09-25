@@ -49,7 +49,7 @@ class ListDistributionConfigsUseCaseTest {
     }
 
     private DistributionConfig domain(String id) {
-        var payload = new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
+        var payload = new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null, null);
         return new DistributionConfig(id, "Deal " + id, 3L, 3L, DistributionConfigStatus.DRAFT, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }

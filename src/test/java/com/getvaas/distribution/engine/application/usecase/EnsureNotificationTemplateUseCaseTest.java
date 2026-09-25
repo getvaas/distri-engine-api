@@ -41,7 +41,7 @@ class EnsureNotificationTemplateUseCaseTest {
 
     private DistributionConfig configWith(NotificationsConfig notifications) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, notifications, null);
+                null, null, null, null, null, null, notifications, null, null);
         return new DistributionConfig("id-1", "Deal", COMPANY_ID, COMPANY_ID, DistributionConfigStatus.DRAFT, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
     }

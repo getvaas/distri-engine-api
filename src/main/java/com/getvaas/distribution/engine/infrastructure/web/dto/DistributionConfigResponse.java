@@ -29,6 +29,7 @@ public record DistributionConfigResponse(
         ReadinessChecksConfig readinessChecks,
         NotificationsConfig notifications,
         TransferInstructionsConfig transferInstructions,
+        Boolean draftModeEnabled,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -49,6 +50,7 @@ public record DistributionConfigResponse(
                 domain.config() != null ? domain.config().readinessChecks() : null,
                 domain.config() != null ? domain.config().notifications() : null,
                 domain.config() != null ? domain.config().transferInstructions() : null,
+                domain.config() != null ? domain.config().draftModeEnabled() : null,
                 domain.createdAt(),
                 domain.updatedAt()
         );
