@@ -4,5 +4,6 @@ public record DocumentTemplateRefRequest(
         String name,
         String fileName,
         String description,
-        String format
+        String format,
+        Long templateId
 ) {}

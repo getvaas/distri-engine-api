@@ -77,6 +77,7 @@ public class NotificationsConfigBuilder {
         }
 
         return new DocumentTemplateRef(
-                documentRequest.name(), documentRequest.fileName(), documentRequest.description(), documentRequest.format());
+                documentRequest.name(), documentRequest.fileName(), documentRequest.description(),
+                documentRequest.format(), documentRequest.templateId());
     }
 }
