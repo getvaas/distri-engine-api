@@ -75,7 +75,7 @@ class CalculateAssignmentsUseCaseTest {
 
     private void mockConfig(DistributionRulesConfig rulesConfig) {
         var payload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, rulesConfig, null, null, null, null);
+                null, null, null, rulesConfig, null, null, null, null, null);
         var config = new DistributionConfig("id-1", "Deal", COMPANY_ID, 3L, DistributionConfigStatus.ACTIVE, payload,
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
         when(resolveActiveDistributionConfigUseCase.execute(COMPANY_ID)).thenReturn(config);

@@ -34,7 +34,7 @@ class UpdateDistributionConfigStatusUseCaseTest {
     private UpdateDistributionConfigStatusUseCase useCase;
 
     private static final DistributionConfigPayload EMPTY_PAYLOAD =
-            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null);
+            new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null, null);
 
     @Test
     void execute_activateWithNoOtherActiveConfig_setsActive() {

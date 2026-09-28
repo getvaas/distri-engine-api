@@ -1,11 +1,14 @@
 package com.getvaas.distribution.engine.infrastructure.web;
 
+import com.getvaas.distribution.engine.application.usecase.ApproveDraftDistributionUseCase;
 import com.getvaas.distribution.engine.application.usecase.RunDistributionUseCase;
 import com.getvaas.distribution.engine.domain.model.DistributionExecutionResult;
+import com.getvaas.distribution.engine.infrastructure.web.dto.ApproveDraftDistributionRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.RunDistributionRequest;
 import com.getvaas.security.annotation.VaasSecurity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,11 +33,22 @@ import java.time.LocalDate;
 public class DistributionExecutionRouter {
 
     private final RunDistributionUseCase runDistributionUseCase;
+    private final ApproveDraftDistributionUseCase approveDraftDistributionUseCase;
 
     @VaasSecurity
     @PostMapping("/run")
     public DistributionExecutionResult run(@Valid @RequestBody RunDistributionRequest request) {
         var date = request.date() != null ? request.date() : LocalDate.now();
         return runDistributionUseCase.execute(request.companyId(), date);
+    }
+
+    /**
+     * VPR-9876: aprueba una distribución persistida en estado {@code DRAFT} — mismo alcance
+     * provisional que {@code /run} (pensado para pruebas manuales, no contrato final).
+     */
+    @VaasSecurity
+    @PostMapping("/{id}/approve")
+    public void approve(@PathVariable Long id, @Valid @RequestBody ApproveDraftDistributionRequest request) {
+        approveDraftDistributionUseCase.execute(id, request.companyId());
     }
 }

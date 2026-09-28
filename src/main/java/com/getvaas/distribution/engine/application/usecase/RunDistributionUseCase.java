@@ -3,6 +3,7 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.DistributionExecutionResult;
 import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
+import com.getvaas.distribution.engine.domain.model.enums.DistributionStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +16,11 @@ import java.util.List;
  * para distribuir, resuelve el pool de fondos elegibles según su Pool Strategy, lo particiona
  * entre distribuibles y ownerless (VPR-9667), calcula los assignments por regla (VPR-9668),
  * persiste la distribución + marca los payment tapes distribuidos (VPR-9669), y notifica el
- * resultado (VPR-9671, primera iteración funcional). No incluye todavía el reporte
- * distribuido/no-distribuido como adjunto de la notificación.
+ * resultado (VPR-9671, primera iteración funcional) — salvo que la distribución haya quedado en
+ * estado {@code DRAFT} (VPR-9876, {@code draftModeEnabled}), en cuyo caso no notifica todavía;
+ * la notificación queda pendiente hasta que se apruebe vía
+ * {@link ApproveDraftDistributionUseCase}. No incluye todavía el reporte distribuido/no-distribuido
+ * como adjunto de la notificación.
  */
 @Component
 @RequiredArgsConstructor
@@ -49,8 +53,10 @@ public class RunDistributionUseCase {
         var persisted = persistDistributionUseCase.execute(config, date, partitioned, assignments);
         markPaymentTapesAsDistributedUseCase.execute(companyId, String.valueOf(persisted.getId()), partitioned.distributable());
 
-        var result = new DistributionExecutionResult(readiness, partitioned, assignments, persisted.getId());
-        notifyDistributionResultUseCase.execute(config, companyId, result);
-        return result;
+        if (!DistributionStatus.DRAFT.dbValue().equals(persisted.getStatus())) {
+            notifyDistributionResultUseCase.execute(config, companyId, persisted.getId(), assignments.size());
+        }
+
+        return new DistributionExecutionResult(readiness, partitioned, assignments, persisted.getId());
     }
 }

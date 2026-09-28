@@ -16,5 +16,6 @@ public record CreateDistributionConfigRequest(
         UpdateReadinessChecksConfigRequest readinessChecks,
         UpdateNotificationsRequest notifications,
         UpdateTransferInstructionsRequest transferInstructions,
-        UpdateVirtualColumnsRequest virtualColumns
+        UpdateVirtualColumnsRequest virtualColumns,
+        Boolean draftModeEnabled
 ) {}

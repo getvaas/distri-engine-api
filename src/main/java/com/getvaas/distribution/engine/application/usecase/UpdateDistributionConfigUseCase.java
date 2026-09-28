@@ -16,8 +16,9 @@ import java.time.LocalDateTime;
  * readinessChecks, notifications, transferInstructions) y la persiste tal cual — el request es la
  * fuente de verdad, sin merge implícito. Un nodo ausente/null en el request resulta en {@code null}
  * en el config guardado, no en preservar el valor anterior. Deal Info (name/masterTrustId/country/
- * currency) es la única excepción: conserva su comportamiento de fallback (campo null → se preserva
- * el valor existente), porque son campos sueltos, no un bloque del wizard.
+ * currency) y {@code draftModeEnabled} (VPR-9876) son la excepción: conservan su comportamiento de
+ * fallback (campo null → se preserva el valor existente), porque son campos sueltos, no un bloque
+ * del wizard.
  */
 @Component
 @RequiredArgsConstructor
@@ -56,7 +57,8 @@ public class UpdateDistributionConfigUseCase {
                 request.ownership() != null ? ownershipConfigBuilder.build(request.ownership()) : null,
                 request.readinessChecks() != null ? readinessChecksConfigBuilder.build(request.readinessChecks()) : null,
                 request.notifications() != null ? notificationsConfigBuilder.build(request.notifications()) : null,
-                request.transferInstructions() != null ? transferInstructionsConfigBuilder.build(request.transferInstructions()) : null
+                request.transferInstructions() != null ? transferInstructionsConfigBuilder.build(request.transferInstructions()) : null,
+                request.draftModeEnabled() != null ? request.draftModeEnabled() : existing.config().draftModeEnabled()
         );
         entity.setConfigJson(mapper.serializeConfig(updatedPayload));
         entity.setUpdatedAt(LocalDateTime.now());

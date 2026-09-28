@@ -4,7 +4,9 @@ import com.getvaas.distribution.engine.application.usecase.AmbiguousDefaultDistr
 import com.getvaas.distribution.engine.application.usecase.AssignmentAllocationExceedsPoolException;
 import com.getvaas.distribution.engine.application.usecase.DistributionConfigNotActiveException;
 import com.getvaas.distribution.engine.application.usecase.DistributionConfigNotFoundException;
+import com.getvaas.distribution.engine.application.usecase.DistributionNotInDraftStatusException;
 import com.getvaas.distribution.engine.application.usecase.InsufficientAccountBalanceException;
+import com.getvaas.distribution.engine.application.usecase.MasterServicerDistributionNotFoundException;
 import com.getvaas.distribution.engine.application.usecase.InvalidDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.MultipleActiveDistributionConfigException;
 import com.getvaas.distribution.engine.application.usecase.NoActiveDistributionConfigException;
@@ -107,5 +109,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PaymentTapeNotFoundException.class)
     public ProblemDetail handlePaymentTapeNotFound(PaymentTapeNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(MasterServicerDistributionNotFoundException.class)
+    public ProblemDetail handleMasterServicerDistributionNotFound(MasterServicerDistributionNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(DistributionNotInDraftStatusException.class)
+    public ProblemDetail handleDistributionNotInDraftStatus(DistributionNotInDraftStatusException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }

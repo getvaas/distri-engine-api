@@ -51,7 +51,8 @@ public class CreateDistributionConfigUseCase {
                 request.ownership() != null ? ownershipConfigBuilder.build(request.ownership()) : null,
                 request.readinessChecks() != null ? readinessChecksConfigBuilder.build(request.readinessChecks()) : null,
                 request.notifications() != null ? notificationsConfigBuilder.build(request.notifications()) : null,
-                request.transferInstructions() != null ? transferInstructionsConfigBuilder.build(request.transferInstructions()) : null
+                request.transferInstructions() != null ? transferInstructionsConfigBuilder.build(request.transferInstructions()) : null,
+                request.draftModeEnabled()
         );
         var domain = new DistributionConfig(
                 UUID.randomUUID().toString(),

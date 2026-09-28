@@ -281,6 +281,18 @@ Para un `toAccountIds`/`Deduction.accountId` de este motor, "existe pero sin ban
 funcionalmente idéntico a "no existe": sin `account_number` no hay forma de completar la instrucción
 de transferencia, así que no debería ser un estado alcanzable por una config `ACTIVE`.
 
+Confirmado el mecanismo exacto (2026-09-25, investigando VPR-9671): el motor real nunca *manda*
+`account_number` en la instrucción de transferencia — ni en la llamada a `documents-api`
+(`AssignmentDocumentGenerationData`/`AddAssignment` solo llevan `accountId: Long`) ni en el
+`context` de la notificación (`notifyTransferInstruction` solo manda `date`). Pero eso no vuelve
+opcional el `bank_account`: la resolución real del número de cuenta para el template del documento
+pasa igual por esa estructura — o la resuelve `documents-api` internamente contra su propio
+`bank_account` sincronizado, o alguien la saca a mano de un endpoint de lectura
+(`AssignmentRichResponse`, que sí expone `accountNumber`) para completar la transferencia. O sea:
+la ausencia de `account_number` en el payload saliente no es evidencia de que el dato no haga
+falta — solo evidencia de que se resuelve un paso después, fuera de este repo. El riesgo de arriba
+sigue vigente sin cambios.
+
 Para las cuentas de `AccountBalancePoolConfig.accounts` (Pool Strategy, `pool.accountBalance`) el
 requisito es distinto — ahí no hace falta `BankAccount`, solo un `account_balance` fresco (ver el
 riesgo de frescura ya documentado en `docs/epica-distri-engine.md`, sección E2), porque esas cuentas

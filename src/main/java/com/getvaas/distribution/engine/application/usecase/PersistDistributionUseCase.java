@@ -4,6 +4,7 @@ import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
 import com.getvaas.distribution.engine.domain.model.PoolFund;
+import com.getvaas.distribution.engine.domain.model.enums.DistributionStatus;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.MasterServicerDistributionJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.AssignmentEntity;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
@@ -23,10 +24,12 @@ import java.util.Objects;
  * `CreateDistribution.apply()` en el motor real — en vez de llamar al endpoint HTTP público que
  * usan integradores externos, dado que este repo comparte el mismo datasource.
  * <p>
- * {@code status} es {@code CALCULATED} si hay al menos un {@link Assignment}, si no
- * {@code NOTHING_DISTRIBUTABLE} (mismos 2 valores del motor real). {@code firstPaymentDate}/
- * {@code lastPaymentDate} son {@code NOT NULL} en la tabla real — si no hay fondos distribuibles de
- * los que derivarlas (pool vacío), caen a la fecha de la corrida.
+ * {@code status} (VPR-9876, corrige los valores inventados de VPR-9669): {@code NOTHING_DISTRIBUTABLE}
+ * si no hay ningún {@link Assignment}; si hay, {@code DRAFT} cuando {@code config.draftModeEnabled()}
+ * es {@code true}, si no {@code APPROVED} — los 3 valores reales de {@link DistributionStatus}
+ * alcanzables desde este motor hoy. {@code firstPaymentDate}/{@code lastPaymentDate} son
+ * {@code NOT NULL} en la tabla real — si no hay fondos distribuibles de los que derivarlas (pool
+ * vacío), caen a la fecha de la corrida.
  * <p>
  * Cada {@code Assignment} se logea antes de intentar persistir — si {@code accountId} no existe
  * de verdad (owner mal configurado, cuenta inexistente), el insert falla con una violación de FK
@@ -42,8 +45,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class PersistDistributionUseCase {
 
-    private static final String STATUS_CALCULATED = "CALCULATED";
-    private static final String STATUS_NOTHING_DISTRIBUTABLE = "NOTHING_DISTRIBUTABLE";
     private static final int CONCEPT_MAX_LENGTH = 100;
 
     private final MasterServicerDistributionJPARepository distributionRepository;
@@ -53,7 +54,7 @@ public class PersistDistributionUseCase {
                                                       PartitionedPoolFunds funds, List<Assignment> assignments) {
         var now = LocalDateTime.now();
         var currency = config.config().currency();
-        var status = assignments.isEmpty() ? STATUS_NOTHING_DISTRIBUTABLE : STATUS_CALCULATED;
+        var status = resolveStatus(config, assignments);
 
         log.info("Persistiendo distribución: companyId={}, masterTrustId={}, date={}, status={}, assignments={}",
                 config.companyId(), config.masterTrustId(), date, status, assignments.size());
@@ -67,7 +68,7 @@ public class PersistDistributionUseCase {
 
         var distribution = MasterServicerDistributionEntity.builder()
                 .masterTrustServicerId(config.masterTrustId())
-                .status(status)
+                .status(status.dbValue())
                 .distributionDate(date.atStartOfDay())
                 .firstPaymentDate(minPaymentDate(funds.distributable(), date))
                 .lastPaymentDate(maxPaymentDate(funds.distributable(), date))
@@ -90,6 +91,15 @@ public class PersistDistributionUseCase {
                 .lastUpdateDate(now)
                 .concept(truncateConcept(assignment.concept()))
                 .build();
+    }
+
+    private DistributionStatus resolveStatus(DistributionConfig config, List<Assignment> assignments) {
+        if (assignments.isEmpty()) {
+            return DistributionStatus.NOTHING_DISTRIBUTABLE;
+        }
+        return Boolean.TRUE.equals(config.config().draftModeEnabled())
+                ? DistributionStatus.DRAFT
+                : DistributionStatus.APPROVED;
     }
 
     private String truncateConcept(String concept) {

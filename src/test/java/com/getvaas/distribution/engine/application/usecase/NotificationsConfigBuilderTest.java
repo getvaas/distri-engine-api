@@ -41,7 +41,7 @@ class NotificationsConfigBuilderTest {
                         "Distribution SOMOS - {{date}}",
                         List.of("ops@getvaas.com", "lender@architect.com"),
                         List.of(new DocumentTemplateRefRequest(
-                                "SOMOS_TRANSFER_INSTRUCTION_V2", "transfer_instruction_v2.docx", "Transfer instruction", "PDF"))),
+                                "SOMOS_TRANSFER_INSTRUCTION_V2", "transfer_instruction_v2.docx", "Transfer instruction", "PDF", 42L))),
                 null);
 
         NotificationsConfig saved = builder.build(request);
@@ -51,13 +51,14 @@ class NotificationsConfigBuilderTest {
         assertThat(saved.templates().documents()).hasSize(1);
         assertThat(saved.templates().documents().get(0).name()).isEqualTo("SOMOS_TRANSFER_INSTRUCTION_V2");
         assertThat(saved.templates().documents().get(0).format()).isEqualTo("PDF");
+        assertThat(saved.templates().documents().get(0).templateId()).isEqualTo(42L);
     }
 
     @Test
     void build_documentWithoutName_throwsInvalidDistributionConfigException() {
         var request = new UpdateNotificationsRequest(null,
                 new UpdateNotificationTemplatesRequest(null, null,
-                        List.of(new DocumentTemplateRefRequest(null, "file.docx", null, null))),
+                        List.of(new DocumentTemplateRefRequest(null, "file.docx", null, null, null))),
                 null);
 
         assertThatThrownBy(() -> builder.build(request))
@@ -68,7 +69,7 @@ class NotificationsConfigBuilderTest {
     void build_documentWithoutFileName_throwsInvalidDistributionConfigException() {
         var request = new UpdateNotificationsRequest(null,
                 new UpdateNotificationTemplatesRequest(null, null,
-                        List.of(new DocumentTemplateRefRequest("NAME", null, null, null))),
+                        List.of(new DocumentTemplateRefRequest("NAME", null, null, null, null))),
                 null);
 
         assertThatThrownBy(() -> builder.build(request))

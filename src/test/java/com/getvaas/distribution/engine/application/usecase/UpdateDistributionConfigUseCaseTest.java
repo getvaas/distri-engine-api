@@ -50,7 +50,7 @@ class UpdateDistributionConfigUseCaseTest {
     }
 
     private static final UpdateDistributionConfigRequest EMPTY_REQUEST =
-            new UpdateDistributionConfigRequest(null, null, null, null, null, null, null, null, null, null, null, null);
+            new UpdateDistributionConfigRequest(null, null, null, null, null, null, null, null, null, null, null, null, null);
 
     private void mockExisting(DistributionConfigPayload payload) {
         var entity = DistributionEngineConfigEntity.builder().id("id-1").name("Old").build();
@@ -71,7 +71,7 @@ class UpdateDistributionConfigUseCaseTest {
     @Test
     void execute_validRequest_updatesDealInfoFieldsOnTheManagedEntity() {
         var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
         var entity = DistributionEngineConfigEntity.builder().id("id-1").name("Old").build();
         var existingDomain = new DistributionConfig("id-1", "Old", 3L, null,
                 DistributionConfigStatus.DRAFT, existingPayload,
@@ -81,7 +81,7 @@ class UpdateDistributionConfigUseCaseTest {
                 LocalDateTime.now(), LocalDateTime.now(), null, null);
 
         var request = new UpdateDistributionConfigRequest("New Name", 3L, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         when(repository.findByIdAndActiveTrue("id-1")).thenReturn(Optional.of(entity));
         when(mapper.toDomain(entity)).thenReturn(existingDomain, savedDomain);
@@ -97,11 +97,11 @@ class UpdateDistributionConfigUseCaseTest {
     @Test
     void execute_onlyCountryProvided_preservesCurrencyFromExisting() {
         var existingPayload = new DistributionConfigPayload("Colombia (COL)", "COP",
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
         mockExisting(existingPayload);
 
         var request = new UpdateDistributionConfigRequest(null, null, "Mexico (MEX)", null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         useCase.execute("id-1", request);
 
@@ -120,11 +120,11 @@ class UpdateDistributionConfigUseCaseTest {
 
     @Test
     void execute_poolProvided_delegatesToPoolConfigBuilder() {
-        mockExisting(new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null));
+        mockExisting(new DistributionConfigPayload(null, null, null, null, null, null, null, null, null, null, null));
 
         var request = new UpdateDistributionConfigRequest(null, null, null, null,
                 new UpdatePoolConfigRequest(PoolStrategyType.PAYMENT_TAPE, "gross_amount", 30, null),
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
 
         useCase.execute("id-1", request);
 
@@ -138,7 +138,7 @@ class UpdateDistributionConfigUseCaseTest {
         var existingPool = new PoolConfig(PoolStrategyType.PAYMENT_TAPE,
                 new PaymentTapePoolConfig("net_amount", 90), null, null);
         mockExisting(new DistributionConfigPayload("Colombia (COL)", "COP",
-                existingPool, null, null, null, null, null, null, null));
+                existingPool, null, null, null, null, null, null, null, null));
 
         useCase.execute("id-1", EMPTY_REQUEST);
 
@@ -151,16 +151,42 @@ class UpdateDistributionConfigUseCaseTest {
         var existingPool = new PoolConfig(PoolStrategyType.PAYMENT_TAPE,
                 new PaymentTapePoolConfig("net_amount", 90), null, null);
         mockExisting(new DistributionConfigPayload("Colombia (COL)", "COP",
-                existingPool, null, null, null, null, null, null, null));
+                existingPool, null, null, null, null, null, null, null, null));
 
         var request = new UpdateDistributionConfigRequest(null, null, null, null,
                 null, null, null, null, null, null, null,
-                new UpdateVirtualColumnsRequest(List.of(new VirtualColumnRequest("lender_amount", "capital + interest"))));
+                new UpdateVirtualColumnsRequest(List.of(new VirtualColumnRequest("lender_amount", "capital + interest"))),
+                null);
 
         useCase.execute("id-1", request);
 
         var saved = captureSavedPayload();
         assertThat(saved.pool()).isNull();
         assertThat(saved.virtualColumns().columns()).hasSize(1);
+    }
+
+    @Test
+    void execute_draftModeEnabledProvided_overridesExistingValue() {
+        mockExisting(new DistributionConfigPayload("Colombia (COL)", "COP",
+                null, null, null, null, null, null, null, null, false));
+
+        var request = new UpdateDistributionConfigRequest(null, null, null, null,
+                null, null, null, null, null, null, null, null, true);
+
+        useCase.execute("id-1", request);
+
+        var saved = captureSavedPayload();
+        assertThat(saved.draftModeEnabled()).isTrue();
+    }
+
+    @Test
+    void execute_draftModeEnabledAbsentFromRequest_preservesExistingValue() {
+        mockExisting(new DistributionConfigPayload("Colombia (COL)", "COP",
+                null, null, null, null, null, null, null, null, true));
+
+        useCase.execute("id-1", EMPTY_REQUEST);
+
+        var saved = captureSavedPayload();
+        assertThat(saved.draftModeEnabled()).isTrue();
     }
 }
