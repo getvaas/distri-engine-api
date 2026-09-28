@@ -6,4 +6,3 @@ build
 .terraform*
 .sdd/
 .DS_Store
-gradle
