@@ -58,6 +58,9 @@ auth0:
   client-id: ${client_id:}
   client-secret: ${client_secret:}
 
+notifications-api:
+  base-url: ${NOTIFICATIONS_API_URL:${BASE_URL:http://localhost:8080/api}/notifications-bot}
+
 vaas:
   security:
     enabled: ${VAAS_SECURITY_ENABLED:false}

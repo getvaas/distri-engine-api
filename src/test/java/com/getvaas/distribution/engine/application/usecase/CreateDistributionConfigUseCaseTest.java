@@ -33,6 +33,8 @@ class CreateDistributionConfigUseCaseTest {
     private DistributionConfigJPARepository repository;
     @Mock
     private DistributionConfigMapper mapper;
+    @Mock
+    private EnsureNotificationTemplateUseCase ensureNotificationTemplateUseCase;
     private CreateDistributionConfigUseCase useCase;
 
     @BeforeEach
@@ -42,7 +44,8 @@ class CreateDistributionConfigUseCaseTest {
         useCase = new CreateDistributionConfigUseCase(repository, mapper,
                 new PoolConfigBuilder(), new PaymentFiltersConfigBuilder(), new DistributionRulesConfigBuilder(),
                 new OwnershipConfigBuilder(), new ReadinessChecksConfigBuilder(), new NotificationsConfigBuilder(),
-                new TransferInstructionsConfigBuilder(), new VirtualColumnsConfigBuilder());
+                new TransferInstructionsConfigBuilder(), new VirtualColumnsConfigBuilder(),
+                ensureNotificationTemplateUseCase);
     }
 
     @Test
@@ -70,6 +73,7 @@ class CreateDistributionConfigUseCaseTest {
         assertThat(result.status()).isEqualTo(DistributionConfigStatus.DRAFT);
         assertThat(result.config().country()).isEqualTo("Colombia (COL)");
         assertThat(result.config().currency()).isEqualTo("COP");
+        verify(ensureNotificationTemplateUseCase).execute(savedDomain);
     }
 
     @Test

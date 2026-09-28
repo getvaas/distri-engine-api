@@ -18,6 +18,10 @@ import java.util.UUID;
  * manda de una (creación no-wizard, "todo completo"), se construyen y validan con los mismos
  * builders que usa el update; si no, quedan {@code null} hasta que un update posterior los
  * complete.
+ * <p>
+ * Al final, {@link EnsureNotificationTemplateUseCase#execute} corre como side-effect — mismo
+ * momento que el sistema real ({@code createDefaultNotificationTemplate} dentro de
+ * {@code CreateDistributionConfig.execute()}, no en un update posterior).
  */
 @Component
 @RequiredArgsConstructor
@@ -33,6 +37,7 @@ public class CreateDistributionConfigUseCase {
     private final NotificationsConfigBuilder notificationsConfigBuilder;
     private final TransferInstructionsConfigBuilder transferInstructionsConfigBuilder;
     private final VirtualColumnsConfigBuilder virtualColumnsConfigBuilder;
+    private final EnsureNotificationTemplateUseCase ensureNotificationTemplateUseCase;
 
     public DistributionConfig execute(CreateDistributionConfigRequest request) {
         var now = LocalDateTime.now();
@@ -62,6 +67,8 @@ public class CreateDistributionConfigUseCase {
         );
         var entity = mapper.toEntity(domain);
         var saved = repository.save(entity);
-        return mapper.toDomain(saved);
+        var created = mapper.toDomain(saved);
+        ensureNotificationTemplateUseCase.execute(created);
+        return created;
     }
 }

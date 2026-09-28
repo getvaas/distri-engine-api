@@ -266,3 +266,22 @@ cumplía lo que el ticket pide explícitamente ("al menos 3 modos configurables 
 se corrigió a `ReadinessCheckSetting` por-check. Este tipo de deriva (código atribuido al ticket
 equivocado, o a un modelo más simple del que el ticket realmente pide) es exactamente lo que este
 doc busca prevenir a futuro.
+
+## Riesgo abierto — cuentas referenciadas sin validar, sin ticket asignado (2026-09-22)
+
+Ni `accountTransferRules.fromAccountIds`/`toAccountIds` ni `Deduction.accountId` (nodo Distribution
+Rules) validan, al guardar ni al pasar a `ACTIVE`, que el `account_id` referenciado (a) exista y (b)
+tenga un `BankAccount`/`account_number` completo del lado destino. Confirmado en un incidente real
+sobre `master-trust-servicer-api` (2026-09-22): un lote de cuentas de prueba (`999xxx`) quedó con
+`account` sin `bank_account` vinculado y tumbó `GET /accounts` con NPE en tres puntos distintos del
+mapper (`AccountMapper.fromDomainToResponse`, `AccountBalanceMapper`) — sin ningún guardrail que lo
+hubiera detectado antes.
+
+Para un `toAccountIds`/`Deduction.accountId` de este motor, "existe pero sin banco" es
+funcionalmente idéntico a "no existe": sin `account_number` no hay forma de completar la instrucción
+de transferencia, así que no debería ser un estado alcanzable por una config `ACTIVE`.
+
+Para las cuentas de `AccountBalancePoolConfig.accounts` (Pool Strategy, `pool.accountBalance`) el
+requisito es distinto — ahí no hace falta `BankAccount`, solo un `account_balance` fresco (ver el
+riesgo de frescura ya documentado en `docs/epica-distri-engine.md`, sección E2), porque esas cuentas
+solo se leen, no reciben plata.

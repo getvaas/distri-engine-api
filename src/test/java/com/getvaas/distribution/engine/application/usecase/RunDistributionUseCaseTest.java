@@ -47,6 +47,8 @@ class RunDistributionUseCaseTest {
     private PersistDistributionUseCase persistDistributionUseCase;
     @Mock
     private MarkPaymentTapesAsDistributedUseCase markPaymentTapesAsDistributedUseCase;
+    @Mock
+    private NotifyDistributionResultUseCase notifyDistributionResultUseCase;
 
     private RunDistributionUseCase useCase;
 
@@ -67,7 +69,7 @@ class RunDistributionUseCaseTest {
         // PartitionOwnershipUseCase real (sin dependencias externas) — solo mockeamos lo que toca datos.
         useCase = new RunDistributionUseCase(resolveActiveDistributionConfigUseCase, runReadinessChecksUseCase,
                 resolveEligibleFundsUseCase, new PartitionOwnershipUseCase(), calculateAssignmentsUseCase,
-                persistDistributionUseCase, markPaymentTapesAsDistributedUseCase);
+                persistDistributionUseCase, markPaymentTapesAsDistributedUseCase, notifyDistributionResultUseCase);
     }
 
     @Test
@@ -89,6 +91,7 @@ class RunDistributionUseCaseTest {
         assertThat(result.distributionId()).isEqualTo(99L);
         verify(persistDistributionUseCase).execute(any(), eq(DATE), any(PartitionedPoolFunds.class), eq(assignments));
         verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(funds));
+        verify(notifyDistributionResultUseCase).execute(any(), eq(3L), eq(result));
     }
 
     @Test
@@ -108,6 +111,7 @@ class RunDistributionUseCaseTest {
         verify(calculateAssignmentsUseCase, never()).execute(anyLong(), any());
         verify(persistDistributionUseCase, never()).execute(any(), any(), any(), any());
         verify(markPaymentTapesAsDistributedUseCase, never()).execute(anyLong(), anyString(), any());
+        verify(notifyDistributionResultUseCase, never()).execute(any(), anyLong(), any());
     }
 
     @Test
