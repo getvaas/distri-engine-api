@@ -39,27 +39,40 @@ public class NotifyTransferInstructionUseCase {
         var transferInstructions = config.config().transferInstructions();
         if (transferInstructions == null || transferInstructions.assignments() == null
                 || transferInstructions.assignments().isEmpty()) {
+            log.info("Instrucción de transferencia no notificada [companyId={}, distributionId={}, event={}]: "
+                    + "'transferInstructions' no configurado o sin owners asignados", companyId, distributionId, event);
             return;
         }
 
         var notifications = config.config().notifications();
         if (notifications == null || notifications.channels() == null || notifications.templates() == null) {
+            log.info("Instrucción de transferencia no notificada [companyId={}, distributionId={}, event={}]: "
+                    + "'notifications' no configurado (channels/templates)", companyId, distributionId, event);
             return;
         }
 
         var enabledEvents = notifications.channels().enabledEvents();
         if (enabledEvents == null || !enabledEvents.contains(event)) {
+            log.info("Instrucción de transferencia no notificada [companyId={}, distributionId={}, event={}]: "
+                    + "evento no habilitado en notifications.channels.enabledEvents (tiene: {})",
+                    companyId, distributionId, event, enabledEvents);
             return;
         }
 
         var recipients = notifications.templates().recipients();
         if (recipients == null || recipients.isEmpty()) {
+            log.info("Instrucción de transferencia no notificada [companyId={}, distributionId={}, event={}]: "
+                    + "sin destinatarios en notifications.templates.recipients", companyId, distributionId, event);
             return;
         }
 
+        log.info("Notificando instrucción de transferencia [companyId={}, distributionId={}, event={}, recipients={}]",
+                companyId, distributionId, event, recipients);
         try {
             notificationProvider.notify(event.name(), recipients,
                     buildContext(companyId, distributionId, transferInstructions.assignments().size(), event), List.of());
+            log.info("Instrucción de transferencia notificada OK [companyId={}, distributionId={}, event={}]",
+                    companyId, distributionId, event);
         } catch (Exception e) {
             log.warn("No se pudo notificar la instrucción de transferencia [companyId={}, distributionId={}, event={}]: {}",
                     companyId, distributionId, event, e.getMessage(), e);

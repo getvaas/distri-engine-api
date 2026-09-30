@@ -178,11 +178,17 @@ public class CalculateAssignmentsUseCase {
      * todavía no se evalúa en tiempo de ejecución).
      */
     private BigDecimal sumColumn(List<PoolFund> funds, String columnName) {
-        var hasColumn = funds.stream().anyMatch(fund -> fund.columns().containsKey(columnName));
-        if (!hasColumn) {
-            throw new InvalidDistributionConfigException(
-                    "La columna '" + columnName + "' (SUM_COLUMN) no está disponible en el pool — si es una "
-                            + "virtual column, todavía no se evalúa en tiempo de ejecución");
+        // Pool vacío (ej. todos los payment tapes ya quedaron marcados por una corrida anterior) no
+        // es un error de configuración — es lo mismo que cualquier otra estrategia frente a un pool
+        // vacío, el monto es simplemente cero. Solo falla explícito cuando SÍ hay fondos pero
+        // ninguno resolvió la columna (referencia a una virtual column, todavía no evaluada).
+        if (!funds.isEmpty()) {
+            var hasColumn = funds.stream().anyMatch(fund -> fund.columns().containsKey(columnName));
+            if (!hasColumn) {
+                throw new InvalidDistributionConfigException(
+                        "La columna '" + columnName + "' (SUM_COLUMN) no está disponible en el pool — si es una "
+                                + "virtual column, todavía no se evalúa en tiempo de ejecución");
+            }
         }
         return funds.stream()
                 .map(fund -> fund.columns().getOrDefault(columnName, BigDecimal.ZERO))

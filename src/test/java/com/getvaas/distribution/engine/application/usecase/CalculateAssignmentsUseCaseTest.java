@@ -372,4 +372,18 @@ class CalculateAssignmentsUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
                 .isInstanceOf(InvalidDistributionConfigException.class);
     }
+
+    @Test
+    void execute_sumColumn_emptyPool_returnsZeroWithoutThrowing() {
+        // Regresión: un pool vacío (ej. todos los payment tapes ya consumidos por una corrida
+        // anterior) no debe fallar solo porque no hay ningún fondo del que leer la columna — es lo
+        // mismo que cualquier otra estrategia frente a un pool vacío, el monto es cero.
+        mockConfig(new DistributionRulesConfig(true, List.of(
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "gross_amount")), null));
+        var funds = new PartitionedPoolFunds(List.of(), List.of());
+
+        var result = useCase.execute(COMPANY_ID, funds);
+
+        assertThat(result).isEmpty();
+    }
 }

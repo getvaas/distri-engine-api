@@ -37,21 +37,31 @@ public class NotifyDistributionResultUseCase {
     public void execute(DistributionConfig config, Long companyId, Long distributionId, int assignmentsCount) {
         var notifications = config.config().notifications();
         if (notifications == null || notifications.channels() == null || notifications.templates() == null) {
+            log.info("Resultado de distribución no notificado [companyId={}, distributionId={}]: "
+                    + "'notifications' no configurado (channels/templates)", companyId, distributionId);
             return;
         }
 
         var enabledEvents = notifications.channels().enabledEvents();
         if (enabledEvents == null || !enabledEvents.contains(EVENT)) {
+            log.info("Resultado de distribución no notificado [companyId={}, distributionId={}]: "
+                    + "{} no habilitado en notifications.channels.enabledEvents (tiene: {})",
+                    companyId, distributionId, EVENT, enabledEvents);
             return;
         }
 
         var recipients = notifications.templates().recipients();
         if (recipients == null || recipients.isEmpty()) {
+            log.info("Resultado de distribución no notificado [companyId={}, distributionId={}]: "
+                    + "sin destinatarios en notifications.templates.recipients", companyId, distributionId);
             return;
         }
 
+        log.info("Notificando resultado de distribución [companyId={}, distributionId={}, recipients={}]",
+                companyId, distributionId, recipients);
         try {
             notificationProvider.notify(EVENT.name(), recipients, buildContext(companyId, distributionId, assignmentsCount), List.of());
+            log.info("Resultado de distribución notificado OK [companyId={}, distributionId={}]", companyId, distributionId);
         } catch (Exception e) {
             log.warn("No se pudo notificar el resultado de la distribución [companyId={}, distributionId={}]: {}",
                     companyId, distributionId, e.getMessage(), e);
