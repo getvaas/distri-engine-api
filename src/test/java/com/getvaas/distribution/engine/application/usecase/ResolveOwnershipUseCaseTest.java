@@ -2,11 +2,14 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
 import com.getvaas.distribution.engine.domain.model.OwnershipCrossValidationConfig;
+import com.getvaas.distribution.engine.domain.model.OwnershipOverride;
 import com.getvaas.distribution.engine.domain.model.OwnershipSourceConfig;
 import com.getvaas.distribution.engine.domain.model.enums.OwnershipMismatchStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.OwnershipSourceType;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.PaymentTapeEntity;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,7 +38,8 @@ class ResolveOwnershipUseCaseTest {
 
     @Test
     void execute_paymentTapeFieldWithOwnerNamePresent_returnsIt() {
-        var config = new OwnershipConfig(new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null), null);
+        var config = new OwnershipConfig(
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null, List.of()), null);
 
         var owner = useCase.execute(tapeWithOwner("Somos SAS"), config);
 
@@ -45,7 +49,7 @@ class ResolveOwnershipUseCaseTest {
     @Test
     void execute_ownerNameBlank_fallsBackToDefaultOwner() {
         var config = new OwnershipConfig(
-                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", "Default Co"), null);
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", "Default Co", List.of()), null);
 
         var owner = useCase.execute(tapeWithOwner("  "), config);
 
@@ -55,7 +59,7 @@ class ResolveOwnershipUseCaseTest {
     @Test
     void execute_ownerNameNullAndNoDefaultOwner_returnsUndefined() {
         var config = new OwnershipConfig(
-                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null), null);
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null, List.of()), null);
 
         var owner = useCase.execute(tapeWithOwner(null), config);
 
@@ -65,7 +69,7 @@ class ResolveOwnershipUseCaseTest {
     @Test
     void execute_unsupportedField_throws() {
         var config = new OwnershipConfig(
-                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "extra_data.aux_var_3", null), null);
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "extra_data.aux_var_3", null, List.of()), null);
 
         assertThatThrownBy(() -> useCase.execute(tapeWithOwner("Somos SAS"), config))
                 .isInstanceOf(UnsupportedOwnershipFieldException.class);
@@ -74,7 +78,7 @@ class ResolveOwnershipUseCaseTest {
     @Test
     void execute_ownershipApiSourceType_throws() {
         var config = new OwnershipConfig(
-                new OwnershipSourceConfig(OwnershipSourceType.OWNERSHIP_API, "contract_id", null), null);
+                new OwnershipSourceConfig(OwnershipSourceType.OWNERSHIP_API, "contract_id", null, List.of()), null);
 
         assertThatThrownBy(() -> useCase.execute(tapeWithOwner("Somos SAS"), config))
                 .isInstanceOf(UnsupportedOwnershipSourceException.class);
@@ -83,7 +87,7 @@ class ResolveOwnershipUseCaseTest {
     @Test
     void execute_crossValidationEnabled_throws() {
         var config = new OwnershipConfig(
-                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null),
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null, List.of()),
                 new OwnershipCrossValidationConfig(true, OwnershipMismatchStrategy.API_WINS));
 
         assertThatThrownBy(() -> useCase.execute(tapeWithOwner("Somos SAS"), config))
@@ -93,8 +97,32 @@ class ResolveOwnershipUseCaseTest {
     @Test
     void execute_crossValidationDisabled_doesNotThrow() {
         var config = new OwnershipConfig(
-                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null),
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null, List.of()),
                 new OwnershipCrossValidationConfig(false, null));
+
+        var owner = useCase.execute(tapeWithOwner("Somos SAS"), config);
+
+        assertThat(owner).isEqualTo("Somos SAS");
+    }
+
+    @Test
+    void execute_ownerNameMatchesOverrideKey_returnsAliasedOwner() {
+        var config = new OwnershipConfig(
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null,
+                        List.of(new OwnershipOverride("LEGACY_CODE_123", "Somos SAS"))),
+                null);
+
+        var owner = useCase.execute(tapeWithOwner("LEGACY_CODE_123"), config);
+
+        assertThat(owner).isEqualTo("Somos SAS");
+    }
+
+    @Test
+    void execute_ownerNameDoesNotMatchAnyOverride_returnsRawValue() {
+        var config = new OwnershipConfig(
+                new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null,
+                        List.of(new OwnershipOverride("LEGACY_CODE_123", "Somos SAS"))),
+                null);
 
         var owner = useCase.execute(tapeWithOwner("Somos SAS"), config);
 

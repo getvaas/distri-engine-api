@@ -2,15 +2,21 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
 import com.getvaas.distribution.engine.domain.model.OwnershipCrossValidationConfig;
+import com.getvaas.distribution.engine.domain.model.OwnershipOverride;
 import com.getvaas.distribution.engine.domain.model.OwnershipSourceConfig;
+import com.getvaas.distribution.engine.infrastructure.web.dto.OwnershipOverrideRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipCrossValidationRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateOwnershipSourceRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.List;
+
 /**
- * Construye la etapa Ownership — Source (VPR-9635) y Cross Validation (VPR-9636). Ambas
- * sub-secciones son opcionales: un deal puede no tener ninguna configurada todavía.
+ * Construye la etapa Ownership — Source (VPR-9635), Cross Validation (VPR-9636) y los overrides
+ * de alias de owner (sin ticket formal — pedido directo para poder seguir probando la API). Todas
+ * las sub-secciones son opcionales: un deal puede no tener ninguna configurada todavía.
  */
 @Component
 public class OwnershipConfigBuilder {
@@ -32,7 +38,32 @@ public class OwnershipConfigBuilder {
             throw new InvalidDistributionConfigException("'source' requiere 'field'");
         }
 
-        return new OwnershipSourceConfig(request.sourceType(), request.field(), request.defaultOwner());
+        return new OwnershipSourceConfig(
+                request.sourceType(), request.field(), request.defaultOwner(), buildOverrides(request.overrides()));
+    }
+
+    private List<OwnershipOverride> buildOverrides(List<OwnershipOverrideRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return List.of();
+        }
+
+        var seenKeys = new HashSet<String>();
+        return requests.stream().map(r -> buildOverride(r, seenKeys)).toList();
+    }
+
+    private OwnershipOverride buildOverride(OwnershipOverrideRequest request, HashSet<String> seenKeys) {
+        if (request.key() == null || request.key().isBlank()) {
+            throw new InvalidDistributionConfigException("cada override de ownership requiere 'key'");
+        }
+        if (request.owner() == null || request.owner().isBlank()) {
+            throw new InvalidDistributionConfigException("cada override de ownership requiere 'owner'");
+        }
+        if (!seenKeys.add(request.key())) {
+            throw new InvalidDistributionConfigException(
+                    "la key '" + request.key() + "' está repetida en 'overrides'");
+        }
+
+        return new OwnershipOverride(request.key(), request.owner());
     }
 
     private OwnershipCrossValidationConfig buildCrossValidationConfig(UpdateOwnershipCrossValidationRequest request) {

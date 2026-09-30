@@ -32,7 +32,10 @@ import java.util.List;
  * {@code remainingBalance.destinationAccountId} configurado para poder persistirse — sin él, falla
  * explícito (no existe ninguna cuenta "default" del company en el sistema real). Cada
  * {@code ComponentOwnerRule} que produce un monto también requiere su propio {@code toAccountId}
- * configurado, mismo criterio.
+ * configurado, mismo criterio. {@code SUM_COLUMN} (VPR-9698) suma directamente
+ * {@code balanceStrategy.amountField} sobre el pool — falla explícito si esa columna no está
+ * resuelta en ningún {@link PoolFund} (por ejemplo, si apunta a una virtual column, todavía no
+ * evaluada en ejecución).
  */
 @Component
 @RequiredArgsConstructor
@@ -67,6 +70,7 @@ public class CalculateAssignmentsUseCase {
                 case PERCENTAGE_OF_POOL -> percentageOf(totalPool, requireDistributionValue(rule));
                 case FIXED_AMOUNT -> requireDistributionValue(rule);
                 case PROPORTIONAL_WEIGHT -> proportionalShare(totalPool, requireDistributionValue(rule), totalWeight);
+                case SUM_COLUMN -> sumColumn(funds.distributable(), requireAmountField(rule));
                 case PERCENTAGE_OF_REMAINING -> {
                     remainingStrategyRules.add(rule);
                     yield null;
@@ -157,6 +161,32 @@ public class CalculateAssignmentsUseCase {
                             + ") requiere 'distributionValue' configurado");
         }
         return value;
+    }
+
+    private String requireAmountField(ComponentOwnerRule rule) {
+        var amountField = rule.balanceStrategy() != null ? rule.balanceStrategy().amountField() : null;
+        if (amountField == null || amountField.isBlank()) {
+            throw new InvalidDistributionConfigException(
+                    "La regla de '" + rule.owner() + "' (SUM_COLUMN) requiere 'amountField' configurado");
+        }
+        return amountField;
+    }
+
+    /**
+     * Suma {@code columnName} sobre cada {@link PoolFund} — falla explícito si la columna no está
+     * resuelta en ningún fondo (VPR-9698: cubre el caso de una virtual column referenciada, que
+     * todavía no se evalúa en tiempo de ejecución).
+     */
+    private BigDecimal sumColumn(List<PoolFund> funds, String columnName) {
+        var hasColumn = funds.stream().anyMatch(fund -> fund.columns().containsKey(columnName));
+        if (!hasColumn) {
+            throw new InvalidDistributionConfigException(
+                    "La columna '" + columnName + "' (SUM_COLUMN) no está disponible en el pool — si es una "
+                            + "virtual column, todavía no se evalúa en tiempo de ejecución");
+        }
+        return funds.stream()
+                .map(fund -> fund.columns().getOrDefault(columnName, BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private BigDecimal percentageOf(BigDecimal base, BigDecimal percentage) {

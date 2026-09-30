@@ -1,17 +1,22 @@
 package com.getvaas.distribution.engine.infrastructure.web;
 
 import com.getvaas.distribution.engine.application.usecase.ApproveDraftDistributionUseCase;
+import com.getvaas.distribution.engine.application.usecase.ListDistributionsUseCase;
 import com.getvaas.distribution.engine.application.usecase.RunDistributionUseCase;
 import com.getvaas.distribution.engine.domain.model.DistributionExecutionResult;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ApproveDraftDistributionRequest;
+import com.getvaas.distribution.engine.infrastructure.web.dto.DistributionListResponse;
+import com.getvaas.distribution.engine.infrastructure.web.dto.ListDistributionsRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.RunDistributionRequest;
 import com.getvaas.security.annotation.VaasSecurity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
@@ -34,12 +39,29 @@ public class DistributionExecutionRouter {
 
     private final RunDistributionUseCase runDistributionUseCase;
     private final ApproveDraftDistributionUseCase approveDraftDistributionUseCase;
+    private final ListDistributionsUseCase listDistributionsUseCase;
 
     @VaasSecurity
     @PostMapping("/run")
     public DistributionExecutionResult run(@Valid @RequestBody RunDistributionRequest request) {
         var date = request.date() != null ? request.date() : LocalDate.now();
         return runDistributionUseCase.execute(request.companyId(), date);
+    }
+
+    /**
+     * Lista distribuciones ya ejecutadas — para ver qué corrió y cuáles quedaron en {@code DRAFT}
+     * pendientes de aprobar (VPR-9876). {@code masterTrustServicerId}, no {@code companyId} — la
+     * entity no tiene esa columna (ver {@code ListDistributionsUseCase}).
+     */
+    @VaasSecurity
+    @GetMapping
+    public DistributionListResponse list(
+            @RequestParam Long masterTrustServicerId,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        var request = new ListDistributionsRequest(masterTrustServicerId, status, page, size);
+        return DistributionListResponse.from(listDistributionsUseCase.execute(request));
     }
 
     /**

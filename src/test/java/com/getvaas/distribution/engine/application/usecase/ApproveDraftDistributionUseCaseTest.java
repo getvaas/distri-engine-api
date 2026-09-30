@@ -3,6 +3,7 @@ package com.getvaas.distribution.engine.application.usecase;
 import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionConfigPayload;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
+import com.getvaas.distribution.engine.domain.model.enums.NotificationEvent;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.MasterServicerDistributionJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.AssignmentEntity;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
@@ -37,10 +38,12 @@ class ApproveDraftDistributionUseCaseTest {
     private ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     @Mock
     private NotifyDistributionResultUseCase notifyDistributionResultUseCase;
+    @Mock
+    private NotifyTransferInstructionUseCase notifyTransferInstructionUseCase;
 
     private ApproveDraftDistributionUseCase useCase() {
         return new ApproveDraftDistributionUseCase(distributionRepository, resolveActiveDistributionConfigUseCase,
-                notifyDistributionResultUseCase);
+                notifyDistributionResultUseCase, notifyTransferInstructionUseCase);
     }
 
     private DistributionConfig activeConfig() {
@@ -71,6 +74,8 @@ class ApproveDraftDistributionUseCaseTest {
         verify(distributionRepository).save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo("approved");
         verify(notifyDistributionResultUseCase).execute(any(), eq(COMPANY_ID), eq(DISTRIBUTION_ID), eq(1));
+        verify(notifyTransferInstructionUseCase).execute(any(), eq(COMPANY_ID), eq(DISTRIBUTION_ID),
+                eq(NotificationEvent.TRANSFER_INSTRUCTION_READY));
     }
 
     @Test
@@ -82,6 +87,7 @@ class ApproveDraftDistributionUseCaseTest {
 
         verify(distributionRepository, never()).save(any());
         verify(notifyDistributionResultUseCase, never()).execute(any(), any(), any(), anyInt());
+        verify(notifyTransferInstructionUseCase, never()).execute(any(), any(), any(), any());
     }
 
     @Test
@@ -95,5 +101,6 @@ class ApproveDraftDistributionUseCaseTest {
 
         verify(distributionRepository, never()).save(any());
         verify(notifyDistributionResultUseCase, never()).execute(any(), any(), any(), anyInt());
+        verify(notifyTransferInstructionUseCase, never()).execute(any(), any(), any(), any());
     }
 }

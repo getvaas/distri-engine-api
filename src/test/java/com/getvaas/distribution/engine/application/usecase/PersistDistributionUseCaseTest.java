@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,7 +56,7 @@ class PersistDistributionUseCaseTest {
     @Test
     void execute_withAssignments_persistsAsApproved() {
         var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
-                LocalDateTime.of(2026, 8, 20, 10, 0));
+                LocalDateTime.of(2026, 8, 20, 10, 0), Map.of());
         var funds = new PartitionedPoolFunds(List.of(fund), List.of());
         var assignment = new Assignment("lender", 61L, "lender", new BigDecimal("100.00"));
         mockSave();
@@ -97,7 +98,7 @@ class PersistDistributionUseCaseTest {
     @Test
     void execute_draftModeEnabledWithAssignments_persistsAsDraft() {
         var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
-                LocalDateTime.of(2026, 8, 20, 10, 0));
+                LocalDateTime.of(2026, 8, 20, 10, 0), Map.of());
         var funds = new PartitionedPoolFunds(List.of(fund), List.of());
         var assignment = new Assignment("lender", 61L, "lender", new BigDecimal("100.00"));
         mockSave();
@@ -124,7 +125,7 @@ class PersistDistributionUseCaseTest {
     @Test
     void execute_draftModeExplicitlyDisabled_persistsAsApproved() {
         var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
-                LocalDateTime.of(2026, 8, 20, 10, 0));
+                LocalDateTime.of(2026, 8, 20, 10, 0), Map.of());
         var funds = new PartitionedPoolFunds(List.of(fund), List.of());
         var assignment = new Assignment("lender", 61L, "lender", new BigDecimal("100.00"));
         mockSave();
@@ -153,8 +154,8 @@ class PersistDistributionUseCaseTest {
 
     @Test
     void execute_multipleFunds_derivesMinAndMaxPaymentDate() {
-        var older = new PoolFund("pt-1", new BigDecimal("50.00"), "lender", LocalDateTime.of(2026, 8, 18, 9, 0));
-        var newer = new PoolFund("pt-2", new BigDecimal("50.00"), "lender", LocalDateTime.of(2026, 8, 22, 9, 0));
+        var older = new PoolFund("pt-1", new BigDecimal("50.00"), "lender", LocalDateTime.of(2026, 8, 18, 9, 0), Map.of());
+        var newer = new PoolFund("pt-2", new BigDecimal("50.00"), "lender", LocalDateTime.of(2026, 8, 22, 9, 0), Map.of());
         var funds = new PartitionedPoolFunds(List.of(older, newer), List.of());
         var assignment = new Assignment("lender", 61L, "lender", new BigDecimal("100.00"));
         mockSave();
@@ -171,7 +172,7 @@ class PersistDistributionUseCaseTest {
     @Test
     void execute_conceptLongerThan100Chars_truncatesBeforePersisting() {
         var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
-                LocalDateTime.of(2026, 8, 20, 10, 0));
+                LocalDateTime.of(2026, 8, 20, 10, 0), Map.of());
         var funds = new PartitionedPoolFunds(List.of(fund), List.of());
         var longConcept = "x".repeat(150);
         var assignment = new Assignment("lender", 61L, longConcept, new BigDecimal("100.00"));
@@ -189,7 +190,7 @@ class PersistDistributionUseCaseTest {
     @Test
     void execute_conceptWithin100Chars_persistsAsIs() {
         var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender",
-                LocalDateTime.of(2026, 8, 20, 10, 0));
+                LocalDateTime.of(2026, 8, 20, 10, 0), Map.of());
         var funds = new PartitionedPoolFunds(List.of(fund), List.of());
         var assignment = new Assignment("lender", 61L, "short concept", new BigDecimal("100.00"));
         mockSave();

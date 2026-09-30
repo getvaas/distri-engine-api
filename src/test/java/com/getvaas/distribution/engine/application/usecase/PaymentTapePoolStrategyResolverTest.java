@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -32,7 +33,8 @@ class PaymentTapePoolStrategyResolverTest {
     @Test
     void resolve_mapsEligibleTapesToPoolFunds() {
         var paymentDate = LocalDateTime.of(2026, 8, 20, 10, 0);
-        var tape = new EligiblePaymentTape("pt-1", 3L, paymentDate, new BigDecimal("100.00"), "Owner Co");
+        var tape = new EligiblePaymentTape("pt-1", 3L, paymentDate, new BigDecimal("100.00"), "Owner Co",
+                Map.of("net_amount", new BigDecimal("100.00")));
         when(fetchEligiblePaymentTapesUseCase.execute(3L, LocalDate.of(2026, 8, 24)))
                 .thenReturn(List.of(tape));
 
@@ -43,5 +45,6 @@ class PaymentTapePoolStrategyResolverTest {
         assertThat(result.get(0).amount()).isEqualByComparingTo("100.00");
         assertThat(result.get(0).owner()).isEqualTo("Owner Co");
         assertThat(result.get(0).paymentDate()).isEqualTo(paymentDate);
+        assertThat(result.get(0).columns()).containsEntry("net_amount", new BigDecimal("100.00"));
     }
 }

@@ -7,6 +7,7 @@ import com.getvaas.distribution.engine.domain.model.Deduction;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentFilterCondition;
 import com.getvaas.distribution.engine.domain.model.RemainingBalanceConfig;
+import com.getvaas.distribution.engine.domain.model.enums.PaymentType;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
@@ -16,13 +17,13 @@ import com.getvaas.distribution.engine.infrastructure.web.dto.RemainingBalanceCo
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdateDistributionRulesRequest;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.List;
 
 /**
- * Construye la etapa Distribution Rules — owner por componente de la cuota (VPR-9643), primera
- * iteración mínima configurable. Fees/deducciones, multi-moneda por regla, remanente/cascada e
- * impuestos/seguros quedan explícitamente fuera de alcance.
+ * Construye la etapa Distribution Rules — cascada de reglas por owner (VPR-9643, VPR-9698). La
+ * lista de reglas es de largo arbitrario, sin identificador de componente ni tope de 4 (ver
+ * {@code ComponentOwnerRule}). Fees/deducciones, multi-moneda por regla e impuestos/seguros
+ * quedan explícitamente fuera de alcance.
  */
 @Component
 public class DistributionRulesConfigBuilder {
@@ -36,9 +37,8 @@ public class DistributionRulesConfigBuilder {
             return new DistributionRulesConfig(enabled, List.of(), remainingBalance);
         }
 
-        var seenComponents = new HashSet<>();
         var componentOwners = ruleRequests.stream()
-                .map(r -> buildComponentOwnerRule(r, seenComponents))
+                .map(this::buildComponentOwnerRule)
                 .toList();
 
         return new DistributionRulesConfig(enabled, componentOwners, remainingBalance);
@@ -48,24 +48,20 @@ public class DistributionRulesConfigBuilder {
         if (request == null) {
             return null;
         }
-        return new RemainingBalanceConfig(request.component(), request.destinationAccountId());
+        return new RemainingBalanceConfig(request.destinationAccountId(), request.fromAccountId());
     }
 
-    private ComponentOwnerRule buildComponentOwnerRule(ComponentOwnerRuleRequest ruleRequest, HashSet<Object> seenComponents) {
-        if (ruleRequest.component() == null) {
-            throw new InvalidDistributionConfigException("cada regla requiere 'component'");
-        }
+    private ComponentOwnerRule buildComponentOwnerRule(ComponentOwnerRuleRequest ruleRequest) {
         if (ruleRequest.owner() == null || ruleRequest.owner().isBlank()) {
             throw new InvalidDistributionConfigException("cada regla requiere 'owner'");
         }
-        if (!seenComponents.add(ruleRequest.component())) {
-            throw new InvalidDistributionConfigException(
-                    "el componente " + ruleRequest.component() + " está repetido en 'componentOwners'");
-        }
 
-        return new ComponentOwnerRule(ruleRequest.component(), ruleRequest.owner(), ruleRequest.description(),
+        var paymentTypes = ruleRequest.paymentTypes() == null ? List.<PaymentType>of() : ruleRequest.paymentTypes();
+
+        return new ComponentOwnerRule(ruleRequest.owner(), ruleRequest.description(),
                 buildBalanceStrategyConfig(ruleRequest.balanceStrategy()),
-                Boolean.TRUE.equals(ruleRequest.distributeAccountingPayments()), ruleRequest.toAccountId());
+                Boolean.TRUE.equals(ruleRequest.distributeAccountingPayments()), ruleRequest.toAccountId(),
+                ruleRequest.fromAccountId(), paymentTypes);
     }
 
     private BalanceStrategyConfig buildBalanceStrategyConfig(BalanceStrategyConfigRequest request) {

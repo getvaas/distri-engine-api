@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,7 +56,7 @@ class ResolveEligibleFundsUseCaseTest {
     @Test
     void execute_supportedStrategy_delegatesToRegisteredResolver() {
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(configWithStrategy(PoolStrategyType.PAYMENT_TAPE));
-        var expected = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null));
+        var expected = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null, Map.of()));
         var useCase = new ResolveEligibleFundsUseCase(
                 resolveActiveDistributionConfigUseCase, List.of(fakeResolver(PoolStrategyType.PAYMENT_TAPE, expected)));
 

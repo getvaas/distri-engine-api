@@ -1,9 +1,12 @@
 package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.OwnershipConfig;
+import com.getvaas.distribution.engine.domain.model.OwnershipOverride;
 import com.getvaas.distribution.engine.domain.model.enums.OwnershipSourceType;
 import com.getvaas.distribution.engine.infrastructure.persistence.payments.entity.PaymentTapeEntity;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Bloque 3 del pipeline de ejecución (VPR-9665): resuelve el owner final de un payment tape.
@@ -15,6 +18,9 @@ import org.springframework.stereotype.Component;
  * {@code OwnershipSourceType.OWNERSHIP_API} y el cross-check de {@code OwnershipCrossValidationConfig}
  * (VPR-9636) necesitan un cliente HTTP a la Ownership API (Atom) que no existe todavía en este repo
  * — fallan explícito ({@link UnsupportedOwnershipSourceException}), quedan para un ticket futuro.
+ * <p>
+ * {@code source.overrides()} (sin ticket formal) se aplica sobre el valor crudo de {@code owner_name}
+ * antes de devolverlo — alias de owner, ver {@link OwnershipOverride}.
  */
 @Component
 public class ResolveOwnershipUseCase {
@@ -45,11 +51,26 @@ public class ResolveOwnershipUseCase {
         }
 
         if (tape.getOwnerName() != null && !tape.getOwnerName().isBlank()) {
-            return tape.getOwnerName();
+            return resolveAlias(tape.getOwnerName(), source.overrides());
         }
         if (source.defaultOwner() != null && !source.defaultOwner().isBlank()) {
             return source.defaultOwner();
         }
         return UNDEFINED_OWNER;
+    }
+
+    // Sin ticket formal — pedido directo para poder seguir probando la API. Cubre el riesgo antes
+    // documentado como "capa de normalización/alias de owner (Finamco/Liquitech)": el valor crudo
+    // resuelto del tape (ej. un código legado) se reemplaza por el owner real si hay un override
+    // configurado para esa key exacta; si no matchea ninguno, se usa el valor crudo tal cual.
+    private String resolveAlias(String rawOwner, List<OwnershipOverride> overrides) {
+        if (overrides == null) {
+            return rawOwner;
+        }
+        return overrides.stream()
+                .filter(override -> rawOwner.equals(override.key()))
+                .map(OwnershipOverride::owner)
+                .findFirst()
+                .orElse(rawOwner);
     }
 }

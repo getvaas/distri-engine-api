@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +39,7 @@ class MarkPaymentTapesAsDistributedUseCaseTest {
                 .netAmount(new BigDecimal("100.00")).build();
         when(paymentTapeJPARepository.findById(new PaymentTapeId("pt-1", COMPANY_ID)))
                 .thenReturn(Optional.of(tape));
-        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender", null);
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender", null, Map.of());
 
         useCase.execute(COMPANY_ID, "42", List.of(fund));
 
@@ -58,7 +59,7 @@ class MarkPaymentTapesAsDistributedUseCaseTest {
     void execute_paymentTapeNotFound_throws() {
         when(paymentTapeJPARepository.findById(new PaymentTapeId("pt-1", COMPANY_ID)))
                 .thenReturn(Optional.empty());
-        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender", null);
+        var fund = new PoolFund("pt-1", new BigDecimal("100.00"), "lender", null, Map.of());
 
         assertThatThrownBy(() -> useCase.execute(COMPANY_ID, "42", List.of(fund)))
                 .isInstanceOf(PaymentTapeNotFoundException.class);
