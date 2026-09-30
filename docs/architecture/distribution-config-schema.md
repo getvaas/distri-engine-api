@@ -80,22 +80,25 @@ igual que ya referencian columnas reales del payment tape.
 DistributionRulesConfig
 ├── hasComponentOwners: boolean                                        — VPR-9699
 ├── remainingBalance: RemainingBalanceConfig, opcional                 — VPR-9705
-│   ├── component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE
-│   └── destinationAccountId: Long
-└── componentOwners: [ComponentOwnerRule]
-    ├── component: PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE
+│   ├── destinationAccountId: Long
+│   └── fromAccountId: Long, opcional                                    — VPR-9698
+└── componentOwners: [ComponentOwnerRule]                              — lista de largo arbitrario, VPR-9698
     ├── owner: String
     ├── description: String, opcional
     ├── distributeAccountingPayments: boolean, default false             — VPR-9706
+    ├── toAccountId: Long, opcional al guardar (requerido en ejecución)
+    ├── fromAccountId: Long, opcional                                    — VPR-9698, config-only
+    ├── paymentTypes: [CASH|ACCT], opcional                              — VPR-9698, config-only
     └── balanceStrategy: BalanceStrategyConfig, opcional                — VPR-9703
-        ├── amountField: String (columna libre de payment_tape, mismo patrón que
+        ├── amountField: String (columna libre de payment_tape, real o virtual — mismo patrón que
         │                 PaymentTapePoolConfig.amountField de VPR-9628)
         ├── sufficiencyStrategy: BalanceSufficiencyStrategy
         │       (SUFFICIENT_OR_STOP | UNTIL_EXHAUSTED | SKIP_IF_INSUFFICIENT | IGNORE_BALANCE)
         ├── distributionStrategy: AmountDistributionStrategy
-        │       (DEFAULT | PROPORTIONAL_WEIGHT | PERCENTAGE_OF_POOL | PERCENTAGE_OF_REMAINING | FIXED_AMOUNT)
+        │       (DEFAULT | PROPORTIONAL_WEIGHT | PERCENTAGE_OF_POOL | PERCENTAGE_OF_REMAINING |
+        │        FIXED_AMOUNT | SUM_COLUMN)
         ├── distributionValue: BigDecimal, opcional (peso/porcentaje/monto fijo según
-        │           distributionStrategy; null cuando distributionStrategy=DEFAULT)
+        │           distributionStrategy; null cuando distributionStrategy=DEFAULT o SUM_COLUMN)
         └── accountTransferRules: [AccountTransferRule], opcional          — VPR-9702
             ├── fromAccountIds: [Long]
             ├── toAccountIds: [Long]
@@ -109,17 +112,30 @@ DistributionRulesConfig
             └── periodicity: DeductionPeriodicity
                     (ALWAYS | ONCE_PER_DISTRIBUTION | ONCE_PER_MONTH | ONCE_PER_WEEK)
 ```
-Scope mínimo (VPR-9643). `hasComponentOwners` declara si el deal usa esta asignación o no.
+Scope mínimo (VPR-9643, ampliado por VPR-9698). `hasComponentOwners` declara si el deal usa esta
+asignación o no. `componentOwners` es una **cascada de reglas por owner, de largo arbitrario** — no
+existe (desde VPR-9698) ningún identificador de "componente de cuota" por regla ni tope de 4: el
+campo `component` (`PRINCIPAL|INTEREST|LATE_FEE|GUARANTEE`) que existía antes se eliminó por ser
+inerte en ejecución (`CalculateAssignmentsUseCase` nunca lo leía) y forzar un tope real de 4 reglas
+que no correspondía al diseño real (ver mockups del wizard). Para atribuir el monto real de un
+componente de cuota (principal/interés/etc.) se usa `SUM_COLUMN` + `amountField` apuntando a la
+columna real (o virtual, VPR-9696) correspondiente — no un identificador separado.
 `remainingBalance` es global al deal (a diferencia de todo lo demás en este nodo) — aplica una
 sola vez, después de aplicar TODAS las reglas anteriores de la cascada, al remanente sin asignar.
-`balanceStrategy` vive por regla (owner+componente), no global al deal, porque cada owner puede
+`balanceStrategy` vive por regla (por owner), no global al deal, porque cada owner puede
 necesitar una estrategia distinta. `distributeAccountingPayments` es un override independiente
-por componente, sin relación forzada con el flag equivalente a nivel deal
+por regla, sin relación forzada con el flag equivalente a nivel deal
 (`AccountingPaymentsConfig.distributeAccountingPayments`, VPR-9631, nodo Payment Filters) — mismo
-nombre, records distintos. `accountTransferRules` es una lista porque bajo el mismo owner
-pueden convivir varias combinaciones from/to/condición distintas (ej. "si contract_id=X mover de
-cuenta 1 a cuenta 2" y "si gateway_code=Y mover de cuenta 3 a cuenta 4"). `deductions` declara las
-comisiones a descontar de una transferencia — mismo `accountId: Long` que `fromAccountIds`/
+nombre, records distintos. `fromAccountId` (VPR-9698) es análogo a `toAccountId` del lado origen —
+config-only, sin uso en ejecución todavía. `paymentTypes` (VPR-9698) declara con qué tipos de pago
+(CASH/ACCT) trabaja la regla — config-only, su efecto en ejecución queda sin definir. `SUM_COLUMN`
+(VPR-9698) suma directamente el valor de `amountField` (sin porcentaje/peso/monto fijo) — requiere
+que la columna nombrada esté resuelta en el pool en tiempo de ejecución; si apunta a una virtual
+column, falla explícito hasta que exista un evaluador de fórmulas en ejecución (no existe todavía,
+ver sección Virtual Columns más abajo). `accountTransferRules` es una lista porque bajo el mismo
+owner pueden convivir varias combinaciones from/to/condición distintas (ej. "si contract_id=X mover
+de cuenta 1 a cuenta 2" y "si gateway_code=Y mover de cuenta 3 a cuenta 4"). `deductions` declara
+las comisiones a descontar de una transferencia — mismo `accountId: Long` que `fromAccountIds`/
 `toAccountIds`, `null` significa que la deducción no se transfiere a ninguna cuenta. Ninguno de
 estos campos tiene validación cruzada con los demás al guardar (ni `hasComponentOwners` con
 `componentOwners`, ni `distributionStrategy` con `distributionValue`, ni `fromAccountIds` con
@@ -128,8 +144,7 @@ mientras la config no esté `ACTIVE`, mismo criterio del resto del proyecto. El 
 monto y la resolución del
 balance en tiempo de ejecución son responsabilidad de la etapa de ejecución (Pista B), fuera de
 alcance de este repo. Explícitamente pendientes, sin resolver todavía: orden de la cascada de
-pagos (VPR-9700), multi-moneda por regla, impuestos y seguros (no tienen columna propia hoy —
-`PaymentComponent` tampoco tiene un valor para "impuestos" todavía, gap conocido).
+pagos (VPR-9700), multi-moneda por regla, impuestos y seguros (no tienen columna propia hoy).
 
 ### Ownership (`ownership`)
 ```
