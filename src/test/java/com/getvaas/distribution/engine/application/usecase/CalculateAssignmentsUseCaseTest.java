@@ -336,26 +336,49 @@ class CalculateAssignmentsUseCaseTest {
 
     @Test
     void execute_sumColumn_sumsRealColumnAcrossPool() {
+        // La columna de SUM_COLUMN tiene que coincidir con la base del pool (net_amount, default) —
+        // acá cada fondo tiene net_amount == fund.amount(), igual que en datos reales.
         mockConfig(new DistributionRulesConfig(true, List.of(
-                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "gross_amount"),
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "net_amount"),
                 rule("lender", AmountDistributionStrategy.DEFAULT, null)), null));
         var funds = new PartitionedPoolFunds(List.of(
-                fundWithColumns("pt-1", "100.00", Map.of("gross_amount", new BigDecimal("40.00"))),
-                fundWithColumns("pt-2", "100.00", Map.of("gross_amount", new BigDecimal("50.00")))),
+                fundWithColumns("pt-1", "40.00", Map.of("net_amount", new BigDecimal("40.00"))),
+                fundWithColumns("pt-2", "50.00", Map.of("net_amount", new BigDecimal("50.00")))),
                 List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
 
-        // total pool (fund.amount, i.e. net_amount) = 200.00; SUM_COLUMN(gross_amount) = 40.00 + 50.00 = 90.00
+        // total pool (fund.amount, net_amount) = 90.00; SUM_COLUMN(net_amount) = 40.00 + 50.00 = 90.00
         assertThat(result).containsExactly(
-                new Assignment("servicer", DEFAULT_ACCOUNT_ID, "servicer", new BigDecimal("90.00")),
-                new Assignment("lender", DEFAULT_ACCOUNT_ID, "lender", new BigDecimal("110.00")));
+                new Assignment("servicer", DEFAULT_ACCOUNT_ID, "servicer", new BigDecimal("90.00")));
+    }
+
+    @Test
+    void execute_sumColumn_differentBasisThanPool_throwsInvalidDistributionConfig() {
+        // VPR-9698 fix: el pool está en net_amount (default) — gross_amount (total_payment) es
+        // estructuralmente >= net_amount para el mismo payment tape, así que sumarlo acá siempre
+        // reclamaría más de lo que hay en el pool. Investigado contra master-trust-servicer-api: el
+        // sistema real nunca deja que un monto gross llegue a la capa de reglas, siempre normaliza a
+        // net antes.
+        mockConfig(new DistributionRulesConfig(true, List.of(
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "gross_amount")), null));
+        var funds = new PartitionedPoolFunds(List.of(
+                fundWithColumns("pt-1", "40.00", Map.of("net_amount", new BigDecimal("40.00"),
+                        "gross_amount", new BigDecimal("55.00")))),
+                List.of());
+
+        assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
+                .isInstanceOf(InvalidDistributionConfigException.class)
+                .hasMessageContaining("gross_amount")
+                .hasMessageContaining("net_amount");
     }
 
     @Test
     void execute_sumColumn_columnNotResolvedInPool_throwsInvalidDistributionConfig() {
+        // Misma base que el pool (net_amount) para aislar el chequeo de "columna no resuelta" del
+        // chequeo de "base distinta a la del pool" (ver execute_sumColumn_differentBasisThanPool_*).
         mockConfig(new DistributionRulesConfig(true, List.of(
-                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "some_virtual_column")), null));
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "net_amount")), null));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
 
         assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
@@ -379,7 +402,7 @@ class CalculateAssignmentsUseCaseTest {
         // anterior) no debe fallar solo porque no hay ningún fondo del que leer la columna — es lo
         // mismo que cualquier otra estrategia frente a un pool vacío, el monto es cero.
         mockConfig(new DistributionRulesConfig(true, List.of(
-                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "gross_amount")), null));
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "net_amount")), null));
         var funds = new PartitionedPoolFunds(List.of(), List.of());
 
         var result = useCase.execute(COMPANY_ID, funds);
