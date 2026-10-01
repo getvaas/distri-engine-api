@@ -1,6 +1,8 @@
 package com.getvaas.distribution.engine.infrastructure.persistence.masterservicer;
 
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -9,4 +11,10 @@ public interface MasterServicerDistributionJPARepository extends JpaRepository<M
 
     boolean existsByMasterTrustServicerIdAndActiveTrueAndDistributionDateBetween(
             Long masterTrustServicerId, LocalDateTime fromDate, LocalDateTime untilDate);
+
+    Page<MasterServicerDistributionEntity> findByMasterTrustServicerIdAndActiveTrue(
+            Long masterTrustServicerId, Pageable pageable);
+
+    Page<MasterServicerDistributionEntity> findByMasterTrustServicerIdAndStatusAndActiveTrue(
+            Long masterTrustServicerId, String status, Pageable pageable);
 }

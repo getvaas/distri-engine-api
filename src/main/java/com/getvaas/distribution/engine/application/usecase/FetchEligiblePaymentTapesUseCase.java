@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Bloque 2 del pipeline de ejecución (VPR-9662): trae los payment tapes elegibles — dentro de la
@@ -60,7 +62,8 @@ public class FetchEligiblePaymentTapesUseCase {
         var ownershipConfig = config.config().ownership();
         return filteredEntities.stream()
                 .map(e -> new EligiblePaymentTape(e.getId(), e.getCompanyId(), e.getPaymentDate(),
-                        resolveAmount(e, resolvedAmountField), resolveOwnershipUseCase.execute(e, ownershipConfig)))
+                        resolveAmount(e, resolvedAmountField), resolveOwnershipUseCase.execute(e, ownershipConfig),
+                        resolveColumns(e)))
                 .toList();
     }
 
@@ -76,5 +79,23 @@ public class FetchEligiblePaymentTapesUseCase {
             throw new NullAmountFieldValueException(entity.getId(), amountField);
         }
         return value;
+    }
+
+    /**
+     * Todas las columnas reales ya mapeadas en {@code PaymentTapeEntity} (VPR-9698), no solo la
+     * elegida para el pool — permite que Distribution Rules (estrategia {@code SUM_COLUMN}) sume
+     * una columna distinta. Una columna con valor {@code null} en esta fila simplemente no entra
+     * al mapa (no hay entrada {@code null}), a diferencia de {@link #resolveAmount} que sí falla
+     * explícito para la columna elegida a nivel pool.
+     */
+    private Map<String, BigDecimal> resolveColumns(PaymentTapeEntity entity) {
+        var columns = new HashMap<String, BigDecimal>();
+        if (entity.getNetAmount() != null) {
+            columns.put("net_amount", entity.getNetAmount());
+        }
+        if (entity.getTotalPayment() != null) {
+            columns.put("gross_amount", entity.getTotalPayment());
+        }
+        return columns;
     }
 }

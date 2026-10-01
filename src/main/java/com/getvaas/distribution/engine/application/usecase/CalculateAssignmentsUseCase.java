@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
+import com.getvaas.distribution.engine.domain.model.DistributionConfig;
 import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
 import com.getvaas.distribution.engine.domain.model.PoolFund;
@@ -32,7 +33,19 @@ import java.util.List;
  * {@code remainingBalance.destinationAccountId} configurado para poder persistirse — sin él, falla
  * explícito (no existe ninguna cuenta "default" del company en el sistema real). Cada
  * {@code ComponentOwnerRule} que produce un monto también requiere su propio {@code toAccountId}
- * configurado, mismo criterio.
+ * configurado, mismo criterio. {@code SUM_COLUMN} (VPR-9698) suma directamente
+ * {@code balanceStrategy.amountField} sobre el pool — falla explícito si esa columna no está
+ * resuelta en ningún {@link PoolFund} (por ejemplo, si apunta a una virtual column, todavía no
+ * evaluada en ejecución), y también si no es la MISMA columna que usa el pool para su propio total
+ * (VPR-9698 fix): {@code remaining}/{@code totalPool} siempre están en la base del pool
+ * ({@code poolAmountField}, default {@code net_amount}) — sumar {@code gross_amount} (que
+ * estructuralmente es {@code >= net_amount}, ver {@code PaymentTapeEntity}) contra un pool en
+ * {@code net_amount} reclama más de lo que hay y siempre revienta
+ * {@code AssignmentAllocationExceedsPoolException}. Investigado contra
+ * {@code master-trust-servicer-api}: el sistema real no tiene un equivalente a {@code SUM_COLUMN} —
+ * normaliza cada payment tape a {@code net_amount} una sola vez, antes de evaluar cualquier regla
+ * ({@code DefaultDistributionParametersCalculator.getNetAmount()}), el monto gross nunca llega a la
+ * capa de reglas.
  */
 @Component
 @RequiredArgsConstructor
@@ -40,6 +53,7 @@ public class CalculateAssignmentsUseCase {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final int SCALE = 2;
+    private static final String DEFAULT_POOL_AMOUNT_FIELD = "net_amount";
 
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final CheckAccountBalanceSufficiencyUseCase checkAccountBalanceSufficiencyUseCase;
@@ -50,6 +64,7 @@ public class CalculateAssignmentsUseCase {
         var rules = rulesConfig != null && rulesConfig.hasComponentOwners() && rulesConfig.componentOwners() != null
                 ? rulesConfig.componentOwners()
                 : List.<ComponentOwnerRule>of();
+        var poolAmountField = resolvePoolAmountField(config);
 
         var totalPool = sumAmounts(funds.distributable());
         var totalWeight = rules.stream()
@@ -67,6 +82,7 @@ public class CalculateAssignmentsUseCase {
                 case PERCENTAGE_OF_POOL -> percentageOf(totalPool, requireDistributionValue(rule));
                 case FIXED_AMOUNT -> requireDistributionValue(rule);
                 case PROPORTIONAL_WEIGHT -> proportionalShare(totalPool, requireDistributionValue(rule), totalWeight);
+                case SUM_COLUMN -> sumColumn(funds.distributable(), requireAmountField(rule), poolAmountField);
                 case PERCENTAGE_OF_REMAINING -> {
                     remainingStrategyRules.add(rule);
                     yield null;
@@ -157,6 +173,65 @@ public class CalculateAssignmentsUseCase {
                             + ") requiere 'distributionValue' configurado");
         }
         return value;
+    }
+
+    private String requireAmountField(ComponentOwnerRule rule) {
+        var amountField = rule.balanceStrategy() != null ? rule.balanceStrategy().amountField() : null;
+        if (amountField == null || amountField.isBlank()) {
+            throw new InvalidDistributionConfigException(
+                    "La regla de '" + rule.owner() + "' (SUM_COLUMN) requiere 'amountField' configurado");
+        }
+        return amountField;
+    }
+
+    /**
+     * Suma {@code columnName} sobre cada {@link PoolFund} — falla explícito si la columna no está
+     * resuelta en ningún fondo (VPR-9698: cubre el caso de una virtual column referenciada, que
+     * todavía no se evalúa en tiempo de ejecución), y también si no coincide con
+     * {@code poolAmountField}: {@code remaining}/{@code totalPool} siempre están en esa base, sumar
+     * una columna en otra base (ej. {@code gross_amount} contra un pool {@code net_amount}) reclama
+     * sistemáticamente más de lo que hay — no es un caso límite, es matemáticamente imposible que
+     * cierre (ver javadoc de la clase). Exigir igualdad exacta con {@code poolAmountField} es
+     * seguro hoy porque {@code PoolFund.columns()} solo puebla {@code net_amount}/{@code gross_amount}
+     * (ver {@code FetchEligiblePaymentTapesUseCase.resolveColumns}) — cuando una virtual column
+     * (VPR-9696) se pueble ahí también, esta validación va a necesitar revisarse (una virtual column
+     * puede ser un subconjunto válido de {@code net_amount} sin ser literalmente esa columna).
+     */
+    private BigDecimal sumColumn(List<PoolFund> funds, String columnName, String poolAmountField) {
+        if (!columnName.equals(poolAmountField)) {
+            throw new InvalidDistributionConfigException(
+                    "La columna '" + columnName + "' (SUM_COLUMN) no coincide con la base del pool ('"
+                            + poolAmountField + "') — sumar una columna en otra base siempre reclama de más o de "
+                            + "menos contra el pool, que está calculado en '" + poolAmountField + "'");
+        }
+        // Pool vacío (ej. todos los payment tapes ya quedaron marcados por una corrida anterior) no
+        // es un error de configuración — es lo mismo que cualquier otra estrategia frente a un pool
+        // vacío, el monto es simplemente cero. Solo falla explícito cuando SÍ hay fondos pero
+        // ninguno resolvió la columna (referencia a una virtual column, todavía no evaluada).
+        if (!funds.isEmpty()) {
+            var hasColumn = funds.stream().anyMatch(fund -> fund.columns().containsKey(columnName));
+            if (!hasColumn) {
+                throw new InvalidDistributionConfigException(
+                        "La columna '" + columnName + "' (SUM_COLUMN) no está disponible en el pool — si es una "
+                                + "virtual column, todavía no se evalúa en tiempo de ejecución");
+            }
+        }
+        return funds.stream()
+                .map(fund -> fund.columns().getOrDefault(columnName, BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Misma resolución de default que {@link FetchEligiblePaymentTapesUseCase} (debe ser idéntica:
+     * {@code totalPool}/{@code remaining} acá y el monto por fondo allá tienen que estar en la misma
+     * base para que el pool tenga sentido).
+     */
+    private String resolvePoolAmountField(DistributionConfig config) {
+        var pool = config.config().pool();
+        if (pool != null && pool.paymentTape() != null && pool.paymentTape().amountField() != null) {
+            return pool.paymentTape().amountField();
+        }
+        return DEFAULT_POOL_AMOUNT_FIELD;
     }
 
     private BigDecimal percentageOf(BigDecimal base, BigDecimal percentage) {

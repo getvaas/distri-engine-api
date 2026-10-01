@@ -111,11 +111,28 @@ class FetchEligiblePaymentTapesUseCaseTest {
         assertThat(result.get(0).paymentDate()).isEqualTo(LocalDateTime.of(2026, 8, 20, 10, 0));
         assertThat(result.get(0).amount()).isEqualByComparingTo("100.50");
         assertThat(result.get(0).owner()).isEqualTo(ResolveOwnershipUseCase.UNDEFINED_OWNER);
+        assertThat(result.get(0).columns()).containsEntry("net_amount", new BigDecimal("100.50"));
+    }
+
+    @Test
+    void execute_totalPaymentColumnPresent_includedInColumnsMap() {
+        when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWithDaysBack(5));
+        var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
+                .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0))
+                .netAmount(new BigDecimal("100.50")).totalPayment(new BigDecimal("120.00")).build();
+        when(paymentTapeJPARepository.findByCompanyIdAndPaymentDateBetweenAndDistributionIdIsNull(
+                eq(3L), any(), any())).thenReturn(List.of(entity));
+
+        var result = useCase.execute(3L, LocalDate.of(2026, 8, 24));
+
+        assertThat(result.get(0).columns())
+                .containsEntry("net_amount", new BigDecimal("100.50"))
+                .containsEntry("gross_amount", new BigDecimal("120.00"));
     }
 
     @Test
     void execute_ownershipConfigured_resolvesOwnerFromPaymentTapeField() {
-        var ownership = new OwnershipConfig(new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null), null);
+        var ownership = new OwnershipConfig(new OwnershipSourceConfig(OwnershipSourceType.PAYMENT_TAPE_FIELD, "owner_name", null, List.of()), null);
         when(resolveActiveDistributionConfigUseCase.execute(3L)).thenReturn(activeConfigWith(5, "net_amount", ownership));
         var entity = PaymentTapeEntity.builder().id("pt-1").companyId(3L)
                 .paymentDate(LocalDateTime.of(2026, 8, 20, 10, 0))

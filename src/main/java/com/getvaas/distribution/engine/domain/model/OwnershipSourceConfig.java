@@ -3,6 +3,8 @@ package com.getvaas.distribution.engine.domain.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.getvaas.distribution.engine.domain.model.enums.OwnershipSourceType;
 
+import java.util.List;
+
 /**
  * Ownership — Source (VPR-9635). {@code field} es un {@code String} libre (mismo patrón que
  * {@code amountField} en Pool Strategy) cuyo significado depende de {@code sourceType}: columna
@@ -17,10 +19,15 @@ import com.getvaas.distribution.engine.domain.model.enums.OwnershipSourceType;
  * contrato SÍ está mapeado pero resuelve a una compañía inexistente, el motor real lanza una
  * excepción no capturada que tumba toda la corrida — es un bug de código del motor, no un gap de
  * esta configuración.
+ * <p>
+ * {@code overrides}, opcional: alias de owner (ver {@link OwnershipOverride}) — resuelve el
+ * riesgo documentado como "capa de normalización/alias de owner (Finamco/Liquitech)". Se aplica
+ * antes de {@code defaultOwner}, nunca lo reemplaza.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record OwnershipSourceConfig(
         OwnershipSourceType sourceType,
         String field,
-        String defaultOwner
+        String defaultOwner,
+        List<OwnershipOverride> overrides
 ) {}

@@ -12,7 +12,6 @@ import com.getvaas.distribution.engine.domain.model.RemainingBalanceConfig;
 import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
-import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.AccountBalanceJPARepository;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.AccountBalanceEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,21 +49,30 @@ class CalculateAssignmentsUseCaseTest {
     }
 
     private PoolFund fund(String sourceId, String amount) {
-        return new PoolFund(sourceId, new BigDecimal(amount), "welli", LocalDateTime.of(2026, 8, 20, 10, 0));
+        return fundWithColumns(sourceId, amount, Map.of());
+    }
+
+    private PoolFund fundWithColumns(String sourceId, String amount, Map<String, BigDecimal> columns) {
+        return new PoolFund(sourceId, new BigDecimal(amount), "welli", LocalDateTime.of(2026, 8, 20, 10, 0), columns);
     }
 
     private ComponentOwnerRule rule(String owner, AmountDistributionStrategy strategy, String value) {
         var balanceStrategy = strategy == null ? null
                 : new BalanceStrategyConfig(null, null, null, strategy,
                         value == null ? null : new BigDecimal(value), List.of());
-        return new ComponentOwnerRule(PaymentComponent.PRINCIPAL, owner, null, balanceStrategy, false, DEFAULT_ACCOUNT_ID);
+        return new ComponentOwnerRule(owner, null, balanceStrategy, false, DEFAULT_ACCOUNT_ID, null, List.of());
+    }
+
+    private ComponentOwnerRule ruleWithAmountField(String owner, AmountDistributionStrategy strategy, String amountField) {
+        var balanceStrategy = new BalanceStrategyConfig(amountField, null, null, strategy, null, List.of());
+        return new ComponentOwnerRule(owner, null, balanceStrategy, false, DEFAULT_ACCOUNT_ID, null, List.of());
     }
 
     private ComponentOwnerRule ruleWithBalanceCheck(String owner, AmountDistributionStrategy strategy, String value,
                                                      BalanceSufficiencyStrategy sufficiencyStrategy, Long accountId) {
         var balanceStrategy = new BalanceStrategyConfig(null, sufficiencyStrategy, List.of(accountId), strategy,
                 value == null ? null : new BigDecimal(value), List.of());
-        return new ComponentOwnerRule(PaymentComponent.PRINCIPAL, owner, null, balanceStrategy, false, accountId);
+        return new ComponentOwnerRule(owner, null, balanceStrategy, false, accountId, null, List.of());
     }
 
     private void mockAccountBalance(Long accountId, String currentBalance) {
@@ -121,7 +130,7 @@ class CalculateAssignmentsUseCaseTest {
 
     @Test
     void execute_percentageOfRemaining_cascadesInConfigOrder() {
-        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
+        var remainingBalance = new RemainingBalanceConfig(500L, null);
         mockConfig(new DistributionRulesConfig(true, List.of(
                 rule("first", AmountDistributionStrategy.PERCENTAGE_OF_REMAINING, "50"),
                 rule("second", AmountDistributionStrategy.PERCENTAGE_OF_REMAINING, "50")), remainingBalance));
@@ -198,7 +207,7 @@ class CalculateAssignmentsUseCaseTest {
 
     @Test
     void execute_noComponentOwnersConfigured_withRemainingBalance_fallsBackToOverrideAccount() {
-        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
+        var remainingBalance = new RemainingBalanceConfig(500L, null);
         mockConfig(new DistributionRulesConfig(false, List.of(), remainingBalance));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "250.00")), List.of());
 
@@ -209,7 +218,7 @@ class CalculateAssignmentsUseCaseTest {
 
     @Test
     void execute_unclaimedRemainder_fallsBackToRemainingBalanceOverride() {
-        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.GUARANTEE, 999L);
+        var remainingBalance = new RemainingBalanceConfig(999L, null);
         mockConfig(new DistributionRulesConfig(true,
                 List.of(rule("investor", AmountDistributionStrategy.PERCENTAGE_OF_POOL, "40")),
                 remainingBalance));
@@ -236,7 +245,7 @@ class CalculateAssignmentsUseCaseTest {
     void execute_ruleWithoutToAccountId_throwsInvalidDistributionConfig() {
         var balanceStrategy = new BalanceStrategyConfig(null, null, null,
                 AmountDistributionStrategy.FIXED_AMOUNT, new BigDecimal("50.00"), List.of());
-        var rule = new ComponentOwnerRule(PaymentComponent.PRINCIPAL, "lender", null, balanceStrategy, false, null);
+        var rule = new ComponentOwnerRule("lender", null, balanceStrategy, false, null, null, List.of());
         mockConfig(new DistributionRulesConfig(true, List.of(rule), null));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "50.00")), List.of());
 
@@ -272,7 +281,7 @@ class CalculateAssignmentsUseCaseTest {
     @Test
     void execute_sufficientBalanceOrSkipAllBorrowers_withInsufficientBalance_skipsRuleOnly() {
         mockAccountBalance(61L, "10.00");
-        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
+        var remainingBalance = new RemainingBalanceConfig(500L, null);
         mockConfig(new DistributionRulesConfig(true, List.of(
                 ruleWithBalanceCheck("borrower", AmountDistributionStrategy.FIXED_AMOUNT, "50.00",
                         BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_SKIP_ALL_BORROWERS, 61L)), remainingBalance));
@@ -287,7 +296,7 @@ class CalculateAssignmentsUseCaseTest {
     @Test
     void execute_untilBalanceExhausted_capsAtAvailableBalance() {
         mockAccountBalance(61L, "30.00");
-        var remainingBalance = new RemainingBalanceConfig(PaymentComponent.PRINCIPAL, 500L);
+        var remainingBalance = new RemainingBalanceConfig(500L, null);
         mockConfig(new DistributionRulesConfig(true, List.of(
                 ruleWithBalanceCheck("lender", AmountDistributionStrategy.FIXED_AMOUNT, "50.00",
                         BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, 61L)), remainingBalance));
@@ -305,8 +314,8 @@ class CalculateAssignmentsUseCaseTest {
     void execute_balanceCheckWithoutAccountIdsToCheck_throwsInvalidDistributionConfig() {
         var balanceStrategy = new BalanceStrategyConfig(null, BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_STOP,
                 List.of(), AmountDistributionStrategy.FIXED_AMOUNT, new BigDecimal("50.00"), List.of());
-        var rule = new ComponentOwnerRule(PaymentComponent.PRINCIPAL, "lender", null, balanceStrategy, false,
-                DEFAULT_ACCOUNT_ID);
+        var rule = new ComponentOwnerRule("lender", null, balanceStrategy, false,
+                DEFAULT_ACCOUNT_ID, null, List.of());
         mockConfig(new DistributionRulesConfig(true, List.of(rule), null));
         var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
 
@@ -323,5 +332,81 @@ class CalculateAssignmentsUseCaseTest {
         var result = useCase.execute(COMPANY_ID, funds);
 
         assertThat(result).containsExactly(new Assignment("lender", DEFAULT_ACCOUNT_ID, "lender", new BigDecimal("50.00")));
+    }
+
+    @Test
+    void execute_sumColumn_sumsRealColumnAcrossPool() {
+        // La columna de SUM_COLUMN tiene que coincidir con la base del pool (net_amount, default) —
+        // acá cada fondo tiene net_amount == fund.amount(), igual que en datos reales.
+        mockConfig(new DistributionRulesConfig(true, List.of(
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "net_amount"),
+                rule("lender", AmountDistributionStrategy.DEFAULT, null)), null));
+        var funds = new PartitionedPoolFunds(List.of(
+                fundWithColumns("pt-1", "40.00", Map.of("net_amount", new BigDecimal("40.00"))),
+                fundWithColumns("pt-2", "50.00", Map.of("net_amount", new BigDecimal("50.00")))),
+                List.of());
+
+        var result = useCase.execute(COMPANY_ID, funds);
+
+        // total pool (fund.amount, net_amount) = 90.00; SUM_COLUMN(net_amount) = 40.00 + 50.00 = 90.00
+        assertThat(result).containsExactly(
+                new Assignment("servicer", DEFAULT_ACCOUNT_ID, "servicer", new BigDecimal("90.00")));
+    }
+
+    @Test
+    void execute_sumColumn_differentBasisThanPool_throwsInvalidDistributionConfig() {
+        // VPR-9698 fix: el pool está en net_amount (default) — gross_amount (total_payment) es
+        // estructuralmente >= net_amount para el mismo payment tape, así que sumarlo acá siempre
+        // reclamaría más de lo que hay en el pool. Investigado contra master-trust-servicer-api: el
+        // sistema real nunca deja que un monto gross llegue a la capa de reglas, siempre normaliza a
+        // net antes.
+        mockConfig(new DistributionRulesConfig(true, List.of(
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "gross_amount")), null));
+        var funds = new PartitionedPoolFunds(List.of(
+                fundWithColumns("pt-1", "40.00", Map.of("net_amount", new BigDecimal("40.00"),
+                        "gross_amount", new BigDecimal("55.00")))),
+                List.of());
+
+        assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
+                .isInstanceOf(InvalidDistributionConfigException.class)
+                .hasMessageContaining("gross_amount")
+                .hasMessageContaining("net_amount");
+    }
+
+    @Test
+    void execute_sumColumn_columnNotResolvedInPool_throwsInvalidDistributionConfig() {
+        // Misma base que el pool (net_amount) para aislar el chequeo de "columna no resuelta" del
+        // chequeo de "base distinta a la del pool" (ver execute_sumColumn_differentBasisThanPool_*).
+        mockConfig(new DistributionRulesConfig(true, List.of(
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "net_amount")), null));
+        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
+
+        assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_sumColumn_missingAmountField_throwsInvalidDistributionConfig() {
+        var balanceStrategy = new BalanceStrategyConfig(null, null, null, AmountDistributionStrategy.SUM_COLUMN, null, List.of());
+        var rule = new ComponentOwnerRule("servicer", null, balanceStrategy, false, DEFAULT_ACCOUNT_ID, null, List.of());
+        mockConfig(new DistributionRulesConfig(true, List.of(rule), null));
+        var funds = new PartitionedPoolFunds(List.of(fund("pt-1", "100.00")), List.of());
+
+        assertThatThrownBy(() -> useCase.execute(COMPANY_ID, funds))
+                .isInstanceOf(InvalidDistributionConfigException.class);
+    }
+
+    @Test
+    void execute_sumColumn_emptyPool_returnsZeroWithoutThrowing() {
+        // Regresión: un pool vacío (ej. todos los payment tapes ya consumidos por una corrida
+        // anterior) no debe fallar solo porque no hay ningún fondo del que leer la columna — es lo
+        // mismo que cualquier otra estrategia frente a un pool vacío, el monto es cero.
+        mockConfig(new DistributionRulesConfig(true, List.of(
+                ruleWithAmountField("servicer", AmountDistributionStrategy.SUM_COLUMN, "net_amount")), null));
+        var funds = new PartitionedPoolFunds(List.of(), List.of());
+
+        var result = useCase.execute(COMPANY_ID, funds);
+
+        assertThat(result).isEmpty();
     }
 }

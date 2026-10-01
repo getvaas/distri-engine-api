@@ -2,6 +2,7 @@ package com.getvaas.distribution.engine.domain.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Una fuente de fondos elegible para el pool de una distribución, sin importar qué Pool Strategy la
@@ -11,10 +12,14 @@ import java.time.LocalDateTime;
  * {@code paymentDate} (VPR-9669) es la fecha del payment tape que originó el fondo — necesaria para
  * derivar {@code distribution.first_payment_date}/{@code last_payment_date} al persistir; se pierde
  * si no se propaga acá, porque el resto del pipeline solo trabaja con montos ya colapsados.
+ * {@code columns} (VPR-9698) carga cada columna real ya resuelta para este fondo (ver
+ * {@link EligiblePaymentTape#columns()}) — permite que una regla de Distribution Rules
+ * (estrategia {@code SUM_COLUMN}) sume una columna distinta a la de {@code amount}.
  */
 public record PoolFund(
         String sourceId,
         BigDecimal amount,
         String owner,
-        LocalDateTime paymentDate
+        LocalDateTime paymentDate,
+        Map<String, BigDecimal> columns
 ) {}

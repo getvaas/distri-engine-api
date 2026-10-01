@@ -5,8 +5,8 @@ import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStra
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.DeductionPeriodicity;
 import com.getvaas.distribution.engine.domain.model.enums.DeductionType;
-import com.getvaas.distribution.engine.domain.model.enums.PaymentComponent;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentFilterOperator;
+import com.getvaas.distribution.engine.domain.model.enums.PaymentType;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
@@ -27,12 +27,12 @@ class DistributionRulesConfigBuilderTest {
     private final DistributionRulesConfigBuilder builder = new DistributionRulesConfigBuilder();
 
     @Test
-    void build_rulesForAll4Components_persistsAsIs() {
+    void build_multipleRules_persistsAsIs() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null),
-                new ComponentOwnerRuleRequest(PaymentComponent.INTEREST, "funder", null, null, null, null),
-                new ComponentOwnerRuleRequest(PaymentComponent.LATE_FEE, "servicer", "late fees go to servicer", null, null, null),
-                new ComponentOwnerRuleRequest(PaymentComponent.GUARANTEE, "guarantee_fund", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null),
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null),
+                new ComponentOwnerRuleRequest("servicer", "late fees go to servicer", null, null, null, null, null),
+                new ComponentOwnerRuleRequest("guarantee_fund", null, null, null, null, null, null)), null);
 
         DistributionRulesConfig saved = builder.build(request);
 
@@ -42,28 +42,24 @@ class DistributionRulesConfigBuilderTest {
     }
 
     @Test
-    void build_ruleWithoutComponent_throwsInvalidDistributionConfigException() {
-        var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(null, "funder", null, null, null, null)), null);
+    void build_moreThan4Rules_persistsWithoutError() {
+        var rules = List.of(
+                new ComponentOwnerRuleRequest("owner1", null, null, null, null, null, null),
+                new ComponentOwnerRuleRequest("owner2", null, null, null, null, null, null),
+                new ComponentOwnerRuleRequest("owner3", null, null, null, null, null, null),
+                new ComponentOwnerRuleRequest("owner4", null, null, null, null, null, null),
+                new ComponentOwnerRuleRequest("owner5", null, null, null, null, null, null));
+        var request = new UpdateDistributionRulesRequest(true, rules, null);
 
-        assertThatThrownBy(() -> builder.build(request))
-                .isInstanceOf(InvalidDistributionConfigException.class);
+        DistributionRulesConfig saved = builder.build(request);
+
+        assertThat(saved.componentOwners()).hasSize(5);
     }
 
     @Test
     void build_ruleWithoutOwner_throwsInvalidDistributionConfigException() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, null, null, null, null, null)), null);
-
-        assertThatThrownBy(() -> builder.build(request))
-                .isInstanceOf(InvalidDistributionConfigException.class);
-    }
-
-    @Test
-    void build_duplicateComponent_throwsInvalidDistributionConfigException() {
-        var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null),
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "servicer", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest(null, null, null, null, null, null, null)), null);
 
         assertThatThrownBy(() -> builder.build(request))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -85,7 +81,7 @@ class DistributionRulesConfigBuilderTest {
                 AmountDistributionStrategy.PERCENTAGE_OF_POOL,
                 new BigDecimal("25.5"), null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
 
@@ -98,7 +94,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_ruleWithoutBalanceStrategy_persistsAsNull() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
 
@@ -110,7 +106,7 @@ class DistributionRulesConfigBuilderTest {
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 null, null, AmountDistributionStrategy.FIXED_AMOUNT, null, null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
 
@@ -124,7 +120,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.SUFFICIENT_BALANCE_OR_STOP, null, AmountDistributionStrategy.DEFAULT,
                 new BigDecimal("100"), null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
 
@@ -133,9 +129,22 @@ class DistributionRulesConfigBuilderTest {
     }
 
     @Test
+    void build_sumColumnStrategy_persists() {
+        var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
+                null, null, AmountDistributionStrategy.SUM_COLUMN, null, null);
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
+
+        var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
+
+        assertThat(saved.distributionStrategy()).isEqualTo(AmountDistributionStrategy.SUM_COLUMN);
+        assertThat(saved.amountField()).isEqualTo("net_amount");
+    }
+
+    @Test
     void build_hasComponentOwnersTrue_persists() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null)), null);
 
         assertThat(builder.build(request).hasComponentOwners()).isTrue();
     }
@@ -153,7 +162,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_hasComponentOwnersFalseWithData_persistsWithoutError() {
         var request = new UpdateDistributionRulesRequest(false, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null)), null);
 
         DistributionRulesConfig saved = builder.build(request);
 
@@ -176,7 +185,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
 
@@ -194,7 +203,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
 
@@ -206,7 +215,7 @@ class DistributionRulesConfigBuilderTest {
         var balanceStrategy = new BalanceStrategyConfigRequest("net_amount",
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT, null, null);
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy();
 
@@ -220,7 +229,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
 
@@ -237,7 +246,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy()
                 .accountTransferRules().get(0).deductions().get(0);
@@ -258,7 +267,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy()
                 .accountTransferRules().get(0).deductions().get(0);
@@ -273,7 +282,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
 
@@ -292,7 +301,7 @@ class DistributionRulesConfigBuilderTest {
                 BalanceSufficiencyStrategy.UNTIL_BALANCE_EXHAUSTED_WHILE_FITTING_PAYMENTS, null, AmountDistributionStrategy.DEFAULT,
                 null, List.of(accountTransferRule));
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, balanceStrategy, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, balanceStrategy, null, null, null, null)), null);
 
         var saved = builder.build(request).componentOwners().get(0).balanceStrategy().accountTransferRules().get(0);
 
@@ -302,13 +311,13 @@ class DistributionRulesConfigBuilderTest {
 
     @Test
     void build_remainingBalanceWithAllFields_persists() {
-        var remainingBalance = new RemainingBalanceConfigRequest(PaymentComponent.LATE_FEE, 42L);
+        var remainingBalance = new RemainingBalanceConfigRequest(42L, 7L);
         var request = new UpdateDistributionRulesRequest(false, null, remainingBalance);
 
         var saved = builder.build(request).remainingBalance();
 
-        assertThat(saved.component()).isEqualTo(PaymentComponent.LATE_FEE);
         assertThat(saved.destinationAccountId()).isEqualTo(42L);
+        assertThat(saved.fromAccountId()).isEqualTo(7L);
     }
 
     @Test
@@ -320,19 +329,19 @@ class DistributionRulesConfigBuilderTest {
 
     @Test
     void build_remainingBalanceWithOnlyOneField_persistsWithoutError() {
-        var remainingBalance = new RemainingBalanceConfigRequest(PaymentComponent.PRINCIPAL, null);
+        var remainingBalance = new RemainingBalanceConfigRequest(null, 7L);
         var request = new UpdateDistributionRulesRequest(false, null, remainingBalance);
 
         var saved = builder.build(request).remainingBalance();
 
-        assertThat(saved.component()).isEqualTo(PaymentComponent.PRINCIPAL);
         assertThat(saved.destinationAccountId()).isNull();
+        assertThat(saved.fromAccountId()).isEqualTo(7L);
     }
 
     @Test
     void build_distributeAccountingPaymentsTrue_persists() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, true, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, true, null, null, null)), null);
 
         assertThat(builder.build(request).componentOwners().get(0).distributeAccountingPayments()).isTrue();
     }
@@ -340,7 +349,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_distributeAccountingPaymentsFalse_persists() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, false, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, false, null, null, null)), null);
 
         assertThat(builder.build(request).componentOwners().get(0).distributeAccountingPayments()).isFalse();
     }
@@ -348,7 +357,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_distributeAccountingPaymentsNotSent_defaultsToFalse() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null)), null);
 
         assertThat(builder.build(request).componentOwners().get(0).distributeAccountingPayments()).isFalse();
     }
@@ -356,7 +365,7 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_toAccountIdSet_persists() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, 61L)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, 61L, null, null)), null);
 
         assertThat(builder.build(request).componentOwners().get(0).toAccountId()).isEqualTo(61L);
     }
@@ -364,8 +373,34 @@ class DistributionRulesConfigBuilderTest {
     @Test
     void build_toAccountIdNotSent_persistsAsNull() {
         var request = new UpdateDistributionRulesRequest(true, List.of(
-                new ComponentOwnerRuleRequest(PaymentComponent.PRINCIPAL, "funder", null, null, null, null)), null);
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null)), null);
 
         assertThat(builder.build(request).componentOwners().get(0).toAccountId()).isNull();
+    }
+
+    @Test
+    void build_fromAccountIdSet_persists() {
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, 17L, null)), null);
+
+        assertThat(builder.build(request).componentOwners().get(0).fromAccountId()).isEqualTo(17L);
+    }
+
+    @Test
+    void build_paymentTypesSet_persists() {
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null,
+                        List.of(PaymentType.CASH, PaymentType.ACCT))), null);
+
+        assertThat(builder.build(request).componentOwners().get(0).paymentTypes())
+                .containsExactly(PaymentType.CASH, PaymentType.ACCT);
+    }
+
+    @Test
+    void build_paymentTypesNotSent_persistsEmptyList() {
+        var request = new UpdateDistributionRulesRequest(true, List.of(
+                new ComponentOwnerRuleRequest("funder", null, null, null, null, null, null)), null);
+
+        assertThat(builder.build(request).componentOwners().get(0).paymentTypes()).isEmpty();
     }
 }

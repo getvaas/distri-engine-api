@@ -4,6 +4,7 @@ import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.DistributionExecutionResult;
 import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionStatus;
+import com.getvaas.distribution.engine.domain.model.enums.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,12 @@ import java.util.List;
  * la notificación queda pendiente hasta que se apruebe vía
  * {@link ApproveDraftDistributionUseCase}. No incluye todavía el reporte distribuido/no-distribuido
  * como adjunto de la notificación.
+ * <p>
+ * También notifica la instrucción de transferencia ({@link NotifyTransferInstructionUseCase}), a
+ * diferencia del resultado general esto corre siempre que haya al menos un assignment, sin
+ * importar el status: el evento real ({@code TRANSFER_INSTRUCTION_READY}) si quedó
+ * {@code APPROVED}, o el de borrador ({@code TRANSFER_INSTRUCTION_DRAFT_READY}) si quedó
+ * {@code DRAFT} — la instrucción real recién se dispara al aprobar ese draft.
  */
 @Component
 @RequiredArgsConstructor
@@ -37,6 +44,7 @@ public class RunDistributionUseCase {
     private final PersistDistributionUseCase persistDistributionUseCase;
     private final MarkPaymentTapesAsDistributedUseCase markPaymentTapesAsDistributedUseCase;
     private final NotifyDistributionResultUseCase notifyDistributionResultUseCase;
+    private final NotifyTransferInstructionUseCase notifyTransferInstructionUseCase;
 
     public DistributionExecutionResult execute(Long companyId, LocalDate date) {
         var config = resolveActiveDistributionConfigUseCase.execute(companyId);
@@ -55,6 +63,13 @@ public class RunDistributionUseCase {
 
         if (!DistributionStatus.DRAFT.dbValue().equals(persisted.getStatus())) {
             notifyDistributionResultUseCase.execute(config, companyId, persisted.getId(), assignments.size());
+        }
+
+        if (!assignments.isEmpty()) {
+            var transferEvent = DistributionStatus.DRAFT.dbValue().equals(persisted.getStatus())
+                    ? NotificationEvent.TRANSFER_INSTRUCTION_DRAFT_READY
+                    : NotificationEvent.TRANSFER_INSTRUCTION_READY;
+            notifyTransferInstructionUseCase.execute(config, companyId, persisted.getId(), transferEvent);
         }
 
         return new DistributionExecutionResult(readiness, partitioned, assignments, persisted.getId());

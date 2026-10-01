@@ -1,6 +1,7 @@
 package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.enums.DistributionStatus;
+import com.getvaas.distribution.engine.domain.model.enums.NotificationEvent;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.MasterServicerDistributionJPARepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -9,7 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * VPR-9876: aprueba una distribución que quedó en estado {@code DRAFT} — mismo registro, mismo id
  * (nunca se crea una distribución nueva), solo cambia el status a {@code APPROVED} y recién ahí
- * dispara la notificación que {@link RunDistributionUseCase} salteó al persistirla como draft.
+ * dispara las notificaciones que {@link RunDistributionUseCase} salteó/pospuso al persistirla como
+ * draft: el resultado general, y la instrucción de transferencia real
+ * ({@code TRANSFER_INSTRUCTION_READY}, {@link NotifyTransferInstructionUseCase}) — la que se mandó
+ * al crear el draft fue la versión de borrador ({@code TRANSFER_INSTRUCTION_DRAFT_READY}), nunca la
+ * real.
  * <p>
  * Esta primera iteración NO recalcula montos contra ninguna reconciliación externa — aprueba tal
  * cual quedaron calculados los assignments al crear el draft. El recálculo real (mecanismo de
@@ -24,6 +29,7 @@ public class ApproveDraftDistributionUseCase {
     private final MasterServicerDistributionJPARepository distributionRepository;
     private final ResolveActiveDistributionConfigUseCase resolveActiveDistributionConfigUseCase;
     private final NotifyDistributionResultUseCase notifyDistributionResultUseCase;
+    private final NotifyTransferInstructionUseCase notifyTransferInstructionUseCase;
 
     @Transactional("masterServicerTransactionManager")
     public void execute(Long distributionId, Long companyId) {
@@ -39,5 +45,6 @@ public class ApproveDraftDistributionUseCase {
 
         var config = resolveActiveDistributionConfigUseCase.execute(companyId);
         notifyDistributionResultUseCase.execute(config, companyId, distributionId, distribution.getAssignments().size());
+        notifyTransferInstructionUseCase.execute(config, companyId, distributionId, NotificationEvent.TRANSFER_INSTRUCTION_READY);
     }
 }

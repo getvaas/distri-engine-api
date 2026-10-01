@@ -8,6 +8,7 @@ import com.getvaas.distribution.engine.domain.model.PoolFund;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckOutcome;
 import com.getvaas.distribution.engine.domain.model.ReadinessCheckResult;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
+import com.getvaas.distribution.engine.domain.model.enums.NotificationEvent;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckStatus;
 import com.getvaas.distribution.engine.domain.model.enums.ReadinessCheckType;
 import com.getvaas.distribution.engine.infrastructure.persistence.masterservicer.entity.MasterServicerDistributionEntity;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +52,8 @@ class RunDistributionUseCaseTest {
     private MarkPaymentTapesAsDistributedUseCase markPaymentTapesAsDistributedUseCase;
     @Mock
     private NotifyDistributionResultUseCase notifyDistributionResultUseCase;
+    @Mock
+    private NotifyTransferInstructionUseCase notifyTransferInstructionUseCase;
 
     private RunDistributionUseCase useCase;
 
@@ -70,7 +74,8 @@ class RunDistributionUseCaseTest {
         // PartitionOwnershipUseCase real (sin dependencias externas) — solo mockeamos lo que toca datos.
         useCase = new RunDistributionUseCase(resolveActiveDistributionConfigUseCase, runReadinessChecksUseCase,
                 resolveEligibleFundsUseCase, new PartitionOwnershipUseCase(), calculateAssignmentsUseCase,
-                persistDistributionUseCase, markPaymentTapesAsDistributedUseCase, notifyDistributionResultUseCase);
+                persistDistributionUseCase, markPaymentTapesAsDistributedUseCase, notifyDistributionResultUseCase,
+                notifyTransferInstructionUseCase);
     }
 
     @Test
@@ -78,7 +83,7 @@ class RunDistributionUseCaseTest {
         var readiness = ReadinessCheckOutcome.of(List.of(
                 new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
-        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null));
+        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null, Map.of()));
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
         var assignments = List.of(new Assignment("Owner Co", 61L, "Owner Co", new BigDecimal("100.00")));
         when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(assignments);
@@ -93,6 +98,7 @@ class RunDistributionUseCaseTest {
         verify(persistDistributionUseCase).execute(any(), eq(DATE), any(PartitionedPoolFunds.class), eq(assignments));
         verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(funds));
         verify(notifyDistributionResultUseCase).execute(any(), eq(3L), eq(99L), eq(assignments.size()));
+        verify(notifyTransferInstructionUseCase).execute(any(), eq(3L), eq(99L), eq(NotificationEvent.TRANSFER_INSTRUCTION_READY));
     }
 
     @Test
@@ -113,6 +119,7 @@ class RunDistributionUseCaseTest {
         verify(persistDistributionUseCase, never()).execute(any(), any(), any(), any());
         verify(markPaymentTapesAsDistributedUseCase, never()).execute(anyLong(), anyString(), any());
         verify(notifyDistributionResultUseCase, never()).execute(any(), anyLong(), anyLong(), anyInt());
+        verify(notifyTransferInstructionUseCase, never()).execute(any(), anyLong(), anyLong(), any());
     }
 
     @Test
@@ -120,8 +127,8 @@ class RunDistributionUseCaseTest {
         var readiness = ReadinessCheckOutcome.of(List.of(
                 new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
-        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null);
-        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER, null);
+        var owned = new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null, Map.of());
+        var ownerless = new PoolFund("pt-2", new BigDecimal("50.00"), ResolveOwnershipUseCase.UNDEFINED_OWNER, null, Map.of());
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(List.of(owned, ownerless));
 
         var result = useCase.execute(3L, DATE);
@@ -136,7 +143,7 @@ class RunDistributionUseCaseTest {
         var readiness = ReadinessCheckOutcome.of(List.of(
                 new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
         when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
-        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null));
+        var funds = List.of(new PoolFund("pt-1", new BigDecimal("100.00"), "Owner Co", null, Map.of()));
         when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(funds);
         var assignments = List.of(new Assignment("Owner Co", 61L, "Owner Co", new BigDecimal("100.00")));
         when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(assignments);
@@ -148,5 +155,19 @@ class RunDistributionUseCaseTest {
         assertThat(result.distributionId()).isEqualTo(99L);
         verify(markPaymentTapesAsDistributedUseCase).execute(eq(3L), eq("99"), eq(funds));
         verify(notifyDistributionResultUseCase, never()).execute(any(), anyLong(), anyLong(), anyInt());
+        verify(notifyTransferInstructionUseCase).execute(any(), eq(3L), eq(99L), eq(NotificationEvent.TRANSFER_INSTRUCTION_DRAFT_READY));
+    }
+
+    @Test
+    void execute_noAssignments_doesNotNotifyTransferInstruction() {
+        var readiness = ReadinessCheckOutcome.of(List.of(
+                new ReadinessCheckResult(ReadinessCheckType.BUSINESS_DAY, ReadinessCheckStatus.PASSED, null)));
+        when(runReadinessChecksUseCase.execute("id-1", DATE)).thenReturn(readiness);
+        when(resolveEligibleFundsUseCase.execute(3L, DATE)).thenReturn(List.of());
+        when(calculateAssignmentsUseCase.execute(eq(3L), any(PartitionedPoolFunds.class))).thenReturn(List.of());
+
+        useCase.execute(3L, DATE);
+
+        verify(notifyTransferInstructionUseCase, never()).execute(any(), anyLong(), anyLong(), any());
     }
 }
