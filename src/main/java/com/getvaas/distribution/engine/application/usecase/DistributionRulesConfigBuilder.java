@@ -1,5 +1,6 @@
 package com.getvaas.distribution.engine.application.usecase;
 
+import com.getvaas.distribution.engine.domain.model.AccountBalanceCheckTarget;
 import com.getvaas.distribution.engine.domain.model.AccountTransferRule;
 import com.getvaas.distribution.engine.domain.model.BalanceStrategyConfig;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
@@ -8,6 +9,7 @@ import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.PaymentFilterCondition;
 import com.getvaas.distribution.engine.domain.model.RemainingBalanceConfig;
 import com.getvaas.distribution.engine.domain.model.enums.PaymentType;
+import com.getvaas.distribution.engine.infrastructure.web.dto.AccountBalanceCheckTargetRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountTransferRuleRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.BalanceStrategyConfigRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.ComponentOwnerRuleRequest;
@@ -69,8 +71,17 @@ public class DistributionRulesConfigBuilder {
             return null;
         }
         return new BalanceStrategyConfig(request.amountField(), request.sufficiencyStrategy(),
-                request.accountIdsToCheck(), request.distributionStrategy(), request.distributionValue(),
+                buildAccountChecks(request.accountChecks()), request.distributionStrategy(), request.distributionValue(),
                 buildAccountTransferRules(request.accountTransferRules()));
+    }
+
+    private List<AccountBalanceCheckTarget> buildAccountChecks(List<AccountBalanceCheckTargetRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return List.of();
+        }
+        return requests.stream()
+                .map(r -> new AccountBalanceCheckTarget(r.accountId(), r.accountType(), r.accountCode()))
+                .toList();
     }
 
     private List<AccountTransferRule> buildAccountTransferRules(List<AccountTransferRuleRequest> ruleRequests) {
