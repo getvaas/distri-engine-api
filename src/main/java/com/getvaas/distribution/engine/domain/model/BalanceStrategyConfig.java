@@ -23,16 +23,20 @@ import java.util.List;
  * con una condición opcional por regla — puede haber varias combinaciones distintas bajo la
  * misma balance strategy.
  * <p>
- * {@code accountIdsToCheck} (VPR-9668) son las cuentas cuyo balance real se consulta cuando
+ * {@code accountChecks} (VPR-9668, campo renombrado y extendido — antes {@code accountIdsToCheck}
+ * era un {@code List<Long>} plano) son las cuentas cuyo balance real se consulta cuando
  * {@code sufficiencyStrategy} está configurado — equivalente a {@code BalanceRule.accountIdsToCheck}
- * del motor real (verificado contra {@code master-trust-servicer-api}). Vacío/null cuando
- * {@code sufficiencyStrategy} es {@code null} (sin chequeo de balance).
+ * del motor real (verificado contra {@code master-trust-servicer-api}), ahora con el
+ * {@code AccountType}/{@code accountCode} de cada cuenta para derivar automáticamente qué campo de
+ * balance leer (ver {@code ResolveAccountBalanceFieldUseCase}) en vez de aplicar la misma fórmula
+ * fija a todas por igual. Vacío/null cuando {@code sufficiencyStrategy} es {@code null} (sin chequeo
+ * de balance).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BalanceStrategyConfig(
         String amountField,
         BalanceSufficiencyStrategy sufficiencyStrategy,
-        List<Long> accountIdsToCheck,
+        List<AccountBalanceCheckTarget> accountChecks,
         AmountDistributionStrategy distributionStrategy,
         BigDecimal distributionValue,
         List<AccountTransferRule> accountTransferRules

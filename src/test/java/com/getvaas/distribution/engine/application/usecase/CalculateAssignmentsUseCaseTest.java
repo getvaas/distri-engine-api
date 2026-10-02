@@ -1,5 +1,6 @@
 package com.getvaas.distribution.engine.application.usecase;
 
+import com.getvaas.distribution.engine.domain.model.AccountBalanceCheckTarget;
 import com.getvaas.distribution.engine.domain.model.Assignment;
 import com.getvaas.distribution.engine.domain.model.BalanceStrategyConfig;
 import com.getvaas.distribution.engine.domain.model.ComponentOwnerRule;
@@ -9,6 +10,7 @@ import com.getvaas.distribution.engine.domain.model.DistributionRulesConfig;
 import com.getvaas.distribution.engine.domain.model.PartitionedPoolFunds;
 import com.getvaas.distribution.engine.domain.model.PoolFund;
 import com.getvaas.distribution.engine.domain.model.RemainingBalanceConfig;
+import com.getvaas.distribution.engine.domain.model.enums.AccountType;
 import com.getvaas.distribution.engine.domain.model.enums.AmountDistributionStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.BalanceSufficiencyStrategy;
 import com.getvaas.distribution.engine.domain.model.enums.DistributionConfigStatus;
@@ -45,7 +47,7 @@ class CalculateAssignmentsUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CalculateAssignmentsUseCase(resolveActiveDistributionConfigUseCase,
-                new CheckAccountBalanceSufficiencyUseCase(accountBalanceJPARepository));
+                new CheckAccountBalanceSufficiencyUseCase(accountBalanceJPARepository, new ResolveAccountBalanceFieldUseCase()));
     }
 
     private PoolFund fund(String sourceId, String amount) {
@@ -70,7 +72,8 @@ class CalculateAssignmentsUseCaseTest {
 
     private ComponentOwnerRule ruleWithBalanceCheck(String owner, AmountDistributionStrategy strategy, String value,
                                                      BalanceSufficiencyStrategy sufficiencyStrategy, Long accountId) {
-        var balanceStrategy = new BalanceStrategyConfig(null, sufficiencyStrategy, List.of(accountId), strategy,
+        var balanceStrategy = new BalanceStrategyConfig(null, sufficiencyStrategy,
+                List.of(new AccountBalanceCheckTarget(accountId, AccountType.COLLECTION, null)), strategy,
                 value == null ? null : new BigDecimal(value), List.of());
         return new ComponentOwnerRule(owner, null, balanceStrategy, false, accountId, null, List.of());
     }

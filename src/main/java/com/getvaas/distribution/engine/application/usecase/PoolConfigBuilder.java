@@ -4,7 +4,6 @@ import com.getvaas.distribution.engine.domain.model.AccountBalancePoolConfig;
 import com.getvaas.distribution.engine.domain.model.AccountBalanceSource;
 import com.getvaas.distribution.engine.domain.model.PaymentTapePoolConfig;
 import com.getvaas.distribution.engine.domain.model.PoolConfig;
-import com.getvaas.distribution.engine.domain.model.enums.PoolBalanceType;
 import com.getvaas.distribution.engine.domain.model.enums.PoolStrategyType;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,6 @@ public class PoolConfigBuilder {
 
     private static final String DEFAULT_AMOUNT_FIELD = "net_amount";
     private static final int DEFAULT_DAYS_BACK = 90;
-    private static final PoolBalanceType DEFAULT_BALANCE_TYPE = PoolBalanceType.USABLE_BALANCE;
 
     public PoolConfig build(UpdatePoolConfigRequest request) {
         var strategy = request.strategy() != null ? request.strategy() : PoolStrategyType.PAYMENT_TAPE;
@@ -58,7 +56,8 @@ public class PoolConfigBuilder {
                     }
                     return new AccountBalanceSource(
                             a.accountId(),
-                            a.balanceType() != null ? a.balanceType() : DEFAULT_BALANCE_TYPE,
+                            a.accountType(),
+                            a.accountCode(),
                             a.description());
                 })
                 .toList();

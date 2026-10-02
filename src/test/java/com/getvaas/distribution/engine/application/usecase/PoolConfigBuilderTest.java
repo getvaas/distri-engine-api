@@ -1,7 +1,7 @@
 package com.getvaas.distribution.engine.application.usecase;
 
 import com.getvaas.distribution.engine.domain.model.PoolConfig;
-import com.getvaas.distribution.engine.domain.model.enums.PoolBalanceType;
+import com.getvaas.distribution.engine.domain.model.enums.AccountType;
 import com.getvaas.distribution.engine.domain.model.enums.PoolStrategyType;
 import com.getvaas.distribution.engine.infrastructure.web.dto.AccountBalanceSourceRequest;
 import com.getvaas.distribution.engine.infrastructure.web.dto.UpdatePoolConfigRequest;
@@ -44,24 +44,16 @@ class PoolConfigBuilderTest {
     @Test
     void build_accountBalanceWithAccounts_buildsAccountBalanceConfigAndNoPaymentTapeConfig() {
         var accounts = List.of(
-                new AccountBalanceSourceRequest(1016974L, PoolBalanceType.CURRENT_BALANCE, "PayU Recaudo"),
-                new AccountBalanceSourceRequest(931465L, null, "PayU Recaudo 2"));
+                new AccountBalanceSourceRequest(1016974L, AccountType.INVESTMENT, "WELLI_INVESTMENT", "PayU Recaudo"),
+                new AccountBalanceSourceRequest(931465L, AccountType.COLLECTION, null, "PayU Recaudo 2"));
 
         PoolConfig pool = builder.build(new UpdatePoolConfigRequest(PoolStrategyType.ACCOUNT_BALANCE, null, null, accounts));
 
         assertThat(pool.strategy()).isEqualTo(PoolStrategyType.ACCOUNT_BALANCE);
         assertThat(pool.paymentTape()).isNull();
         assertThat(pool.accountBalance().accounts()).hasSize(2);
-        assertThat(pool.accountBalance().accounts().get(0).balanceType()).isEqualTo(PoolBalanceType.CURRENT_BALANCE);
-    }
-
-    @Test
-    void build_accountBalanceWithoutExplicitBalanceType_defaultsToUsableBalance() {
-        var accounts = List.of(new AccountBalanceSourceRequest(1016974L, null, "PayU Recaudo"));
-
-        PoolConfig pool = builder.build(new UpdatePoolConfigRequest(PoolStrategyType.ACCOUNT_BALANCE, null, null, accounts));
-
-        assertThat(pool.accountBalance().accounts().get(0).balanceType()).isEqualTo(PoolBalanceType.USABLE_BALANCE);
+        assertThat(pool.accountBalance().accounts().get(0).accountType()).isEqualTo(AccountType.INVESTMENT);
+        assertThat(pool.accountBalance().accounts().get(0).accountCode()).isEqualTo("WELLI_INVESTMENT");
     }
 
     @Test
@@ -73,8 +65,8 @@ class PoolConfigBuilderTest {
     @Test
     void build_accountBalanceWithDuplicateAccountId_throwsInvalidDistributionConfigException() {
         var accounts = List.of(
-                new AccountBalanceSourceRequest(1016974L, null, "PayU Recaudo"),
-                new AccountBalanceSourceRequest(1016974L, PoolBalanceType.CURRENT_BALANCE, "Duplicada"));
+                new AccountBalanceSourceRequest(1016974L, AccountType.COLLECTION, null, "PayU Recaudo"),
+                new AccountBalanceSourceRequest(1016974L, AccountType.RESERVE, null, "Duplicada"));
 
         assertThatThrownBy(() -> builder.build(new UpdatePoolConfigRequest(PoolStrategyType.ACCOUNT_BALANCE, null, null, accounts)))
                 .isInstanceOf(InvalidDistributionConfigException.class);
@@ -82,7 +74,7 @@ class PoolConfigBuilderTest {
 
     @Test
     void build_switchingFromPaymentTapeToAccountBalance_doesNotLeavePaymentTapeConfig() {
-        var accounts = List.of(new AccountBalanceSourceRequest(1016974L, null, "PayU Recaudo"));
+        var accounts = List.of(new AccountBalanceSourceRequest(1016974L, AccountType.COLLECTION, null, "PayU Recaudo"));
 
         PoolConfig pool = builder.build(new UpdatePoolConfigRequest(PoolStrategyType.ACCOUNT_BALANCE, null, null, accounts));
 
